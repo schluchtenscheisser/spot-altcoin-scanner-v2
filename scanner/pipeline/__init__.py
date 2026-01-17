@@ -36,9 +36,9 @@ def run_pipeline(config: ScannerConfig) -> None:
     5. Run cheap pass (shortlist)
     6. Fetch OHLCV for shortlist
     7. Compute features (1d + 4h)
-    8. Enrich features with price and coin name
+    8. Enrich features with price, name, market cap, and volume
     9. Compute scores (breakout / pullback / reversal)
-    10. Write reports (Markdown + JSON)
+    10. Write reports (Markdown + JSON + Excel)
     11. Write snapshot for backtests
     """
     run_mode = config.run_mode
@@ -119,8 +119,8 @@ def run_pipeline(config: ScannerConfig) -> None:
     features = feature_engine.compute_all(ohlcv_data)
     logger.info(f"✓ Features: {len(features)} symbols")
 
-    # Step 8: Enrich features with price and coin name
-    logger.info("\n[8/11] Enriching features with price and coin name...")
+    # Step 8: Enrich features with price, coin name, market cap, and volume
+    logger.info("\n[8/11] Enriching features with price, name, market cap, and volume...")
     for symbol in features.keys():
         # Add current price from tickers
         ticker = ticker_map.get(symbol)
@@ -135,10 +135,19 @@ def run_pipeline(config: ScannerConfig) -> None:
             features[symbol]['coin_name'] = mapping.cmc_data.get('name', 'Unknown')
         else:
             features[symbol]['coin_name'] = 'Unknown'
+        
+        # Add market cap and volume from shortlist data
+        shortlist_entry = next((s for s in shortlist if s['symbol'] == symbol), None)
+        if shortlist_entry:
+            features[symbol]['market_cap'] = shortlist_entry.get('market_cap')
+            features[symbol]['quote_volume_24h'] = shortlist_entry.get('quote_volume_24h')
+        else:
+            features[symbol]['market_cap'] = None
+            features[symbol]['quote_volume_24h'] = None
 
-    logger.info(f"✓ Enriched {len(features)} symbols with price and name")
+    logger.info(f"✓ Enriched {len(features)} symbols with price, name, market cap, and volume")
     
-    # Prepare volume map for scoring
+    # Prepare volume map for scoring (backwards compatibility)
     volume_map = {s['symbol']: s['quote_volume_24h'] for s in shortlist}
     
     # Step 9: Compute scores (breakout / pullback / reversal)
@@ -156,7 +165,7 @@ def run_pipeline(config: ScannerConfig) -> None:
     pullback_results = score_pullbacks(features, volume_map, config.raw)
     logger.info(f"  ✓ Pullbacks: {len(pullback_results)} scored")
     
-    # Step 10: Write reports (Markdown + JSON)
+    # Step 10: Write reports (Markdown + JSON + Excel)
     logger.info("\n[10/11] Generating reports...")
     report_gen = ReportGenerator(config.raw)
     report_paths = report_gen.save_reports(
@@ -167,6 +176,8 @@ def run_pipeline(config: ScannerConfig) -> None:
     )
     logger.info(f"✓ Markdown: {report_paths['markdown']}")
     logger.info(f"✓ JSON: {report_paths['json']}")
+    if 'excel' in report_paths:
+        logger.info(f"✓ Excel: {report_paths['excel']}")
     
     # Step 11: Write snapshot for backtests
     logger.info("\n[11/11] Creating snapshot...")
@@ -199,5 +210,7 @@ def run_pipeline(config: ScannerConfig) -> None:
     logger.info(f"  Pullbacks: {len(pullback_results)}")
     logger.info(f"\nOutputs:")
     logger.info(f"  Report: {report_paths['markdown']}")
+    if 'excel' in report_paths:
+        logger.info(f"  Excel: {report_paths['excel']}")
     logger.info(f"  Snapshot: {snapshot_path}")
     logger.info("=" * 80)
