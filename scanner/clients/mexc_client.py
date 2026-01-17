@@ -180,3 +180,80 @@ class MEXCClient:
         save_cache(data, cache_key)
         logger.info(f"Fetched {len(data)} ticker entries")
         return data
+    
+    def get_klines(
+        self,
+        symbol: str,
+        interval: str = "1d",
+        limit: int = 120,
+        use_cache: bool = True
+    ) -> List[List]:
+        """
+        Get candlestick/kline data for a symbol.
+        
+        Args:
+            symbol: Trading pair (e.g., 'BTCUSDT')
+            interval: Timeframe (1m, 5m, 15m, 1h, 4h, 1d, 1w)
+            limit: Number of candles (max 1000)
+            use_cache: Use cached data if available
+            
+        Returns:
+            List of klines, each kline is a list:
+            [openTime, open, high, low, close, volume, closeTime, quoteVolume, ...]
+        """
+        cache_key = f"mexc_klines_{symbol}_{interval}"
+        
+        if use_cache and cache_exists(cache_key):
+            logger.debug(f"Loading klines from cache: {symbol} {interval}")
+            return load_cache(cache_key)
+        
+        logger.debug(f"Fetching klines: {symbol} {interval} (limit={limit})")
+        
+        params = {
+            "symbol": symbol,
+            "interval": interval,
+            "limit": min(limit, 1000)  # API max is 1000
+        }
+        
+        data = self._request("GET", "/api/v3/klines", params=params)
+        
+        save_cache(data, cache_key)
+        return data
+    
+    def get_multiple_klines(
+        self,
+        symbols: List[str],
+        interval: str = "1d",
+        limit: int = 120,
+        use_cache: bool = True
+    ) -> Dict[str, List[List]]:
+        """
+        Get klines for multiple symbols (sequential, rate-limited).
+        
+        Args:
+            symbols: List of trading pairs
+            interval: Timeframe
+            limit: Candles per symbol
+            use_cache: Use cached data
+            
+        Returns:
+            Dict mapping symbol -> klines
+        """
+        results = {}
+        total = len(symbols)
+        
+        logger.info(f"Fetching klines for {total} symbols ({interval})")
+        
+        for i, symbol in enumerate(symbols, 1):
+            try:
+                results[symbol] = self.get_klines(symbol, interval, limit, use_cache)
+                
+                if i % 10 == 0:
+                    logger.info(f"Progress: {i}/{total} symbols")
+                    
+            except Exception as e:
+                logger.error(f"Failed to fetch klines for {symbol}: {e}")
+                results[symbol] = []
+        
+        logger.info(f"Successfully fetched klines for {len(results)} symbols")
+        return results
