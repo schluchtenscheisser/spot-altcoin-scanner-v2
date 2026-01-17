@@ -1,1 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Data & Logs
+data/raw/*
+data/processed/*
+logs/*.log
+*.log
+
+# Secrets
+.env
+config/secrets.yml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Keep structure
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!logs/.gitkeep
 
