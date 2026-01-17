@@ -1,1 +1,108 @@
+version:
+  spec: 1.0
+  config: 1.0
+
+general:
+  run_mode: "standard"        # "standard", "fast", "offline", "backtest"
+  timezone: "UTC"
+  shortlist_size: 100
+  lookback_days_1d: 120
+  lookback_days_4h: 30
+
+data_sources:
+  mexc:
+    enabled: true
+    max_retries: 3
+    retry_backoff_seconds: 3
+
+  market_cap:
+    provider: "cmc"
+    api_key_env_var: "CMC_API_KEY"
+    max_retries: 3
+    bulk_limit: 5000
+
+universe_filters:
+  market_cap:
+    min_usd: 100000000      # 100M
+    max_usd: 3000000000     # 3B
+  volume:
+    min_quote_volume_24h: 1000000
+  history:
+    min_history_days_1d: 60
+  include_only_usdt_pairs: true
+
+exclusions:
+  exclude_stablecoins: true
+  exclude_wrapped_tokens: true
+  exclude_leveraged_tokens: true
+  exclude_synthetic_derivatives: true
+
+mapping:
+  require_high_confidence: false
+  overrides_file: "config/mapping_overrides.json"
+  collisions_report_file: "reports/mapping_collisions.csv"
+  unmapped_behavior: "filter"
+
+features:
+  timeframes:
+    - "1d"
+    - "4h"
+  ema_periods:
+    - 20
+    - 50
+  atr_period: 14
+  high_low_lookback_days:
+    breakout: 30
+    reversal: 60
+  volume_sma_period: 7
+  volume_spike_threshold: 1.5
+  drawdown_lookback_days: 365
+
+scoring:
+  breakout:
+    enabled: true
+    high_lookback_days: 30
+    min_volume_spike_factor: 1.5
+    max_overextension_ema20_percent: 25
+    weights:
+      price_break: 0.40
+      volume_confirmation: 0.40
+      volatility_context: 0.20
+
+  pullback:
+    enabled: true
+    max_pullback_from_high_percent: 25
+    min_trend_days: 10
+    ema_trend_period_days: 20
+    weights:
+      trend_quality: 0.40
+      pullback_quality: 0.40
+      rebound_signal: 0.20
+
+  reversal:
+    enabled: true
+    min_drawdown_from_ath_percent: 40
+    max_drawdown_from_ath_percent: 90
+    base_lookback_days: 45
+    min_base_days_without_new_low: 10
+    max_allowed_new_low_percent_vs_base_low: 3
+    min_reclaim_above_ema_days: 1
+    min_volume_spike_factor: 1.5
+    weights:
+      base_structure: 0.30
+      reclaim_signal: 0.40
+      volume_confirmation: 0.30
+
+backtest:
+  enabled: true
+  forward_return_days: [7, 14, 30]
+  max_holding_days: 30
+  entry_price: "close"
+  exit_price: "close_forward"
+  slippage_bps: 10
+
+logging:
+  level: "INFO"
+  file: "logs/scanner.log"
+  log_to_file: true
 
