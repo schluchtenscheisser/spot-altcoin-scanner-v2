@@ -144,10 +144,11 @@ class MEXCClient:
         symbols = []
         for symbol_info in exchange_info.get("symbols", []):
             # Filter: USDT quote, Spot, Trading status
+            # Note: MEXC uses status="1" for enabled (not "ENABLED")
             if (
                 symbol_info.get("quoteAsset") == "USDT" and
                 symbol_info.get("isSpotTradingAllowed", False) and
-                symbol_info.get("status") == "ENABLED"
+                symbol_info.get("status") == "1"
             ):
                 symbols.append(symbol_info["symbol"])
         
