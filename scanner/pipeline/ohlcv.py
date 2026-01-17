@@ -22,27 +22,22 @@ class OHLCVFetcher:
         
         Args:
             mexc_client: Instance of MEXCClient
-            config: Config dict with 'ohlcv' section
+            config: Config dict with 'ohlcv' section OR ScannerConfig object
         """
         self.mexc = mexc_client
         
         # Handle both dict and ScannerConfig object
-        if hasattr(config, 'get'):
-            self.config = config.get('ohlcv', {})
+        if hasattr(config, 'raw'):
+            # It's a ScannerConfig object
+            self.timeframes = config.raw.get('ohlcv', {}).get('timeframes', ['1d', '4h'])
+            self.lookback = config.raw.get('ohlcv', {}).get('lookback', {'1d': 120, '4h': 180})
+            self.min_candles = config.raw.get('ohlcv', {}).get('min_candles', {'1d': 60, '4h': 90})
         else:
-            # It's a ScannerConfig object, access via attributes
-            self.config = getattr(config, 'ohlcv', {}) if hasattr(config, 'ohlcv') else {}
-        
-        # Timeframes to fetch
-        self.timeframes = self.config.get('timeframes', ['1d', '4h']) if isinstance(self.config, dict) else ['1d', '4h']
-        
-        # Lookback (number of candles)
-        if isinstance(self.config, dict):
-            self.lookback = self.config.get('lookback', {'1d': 120, '4h': 180})
-            self.min_candles = self.config.get('min_candles', {'1d': 60, '4h': 90})
-        else:
-            self.lookback = {'1d': 120, '4h': 180}
-            self.min_candles = {'1d': 60, '4h': 90}
+            # It's a dict
+            ohlcv_config = config.get('ohlcv', {})
+            self.timeframes = ohlcv_config.get('timeframes', ['1d', '4h'])
+            self.lookback = ohlcv_config.get('lookback', {'1d': 120, '4h': 180})
+            self.min_candles = ohlcv_config.get('min_candles', {'1d': 60, '4h': 90})
         
         logger.info(f"OHLCV Fetcher initialized: timeframes={self.timeframes}")
     
