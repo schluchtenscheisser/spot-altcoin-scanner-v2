@@ -1,0 +1,1067 @@
+[
+  {
+    "mexc_symbol": "AMPEDUSDT",
+    "base_asset": "AMPED",
+    "notes": "Symbol AMPED not found in CMC data"
+  },
+  {
+    "mexc_symbol": "REFACTAUSDT",
+    "base_asset": "REFACTA",
+    "notes": "Symbol REFACTA not found in CMC data"
+  },
+  {
+    "mexc_symbol": "CARFIUSDT",
+    "base_asset": "CARFI",
+    "notes": "Symbol CARFI not found in CMC data"
+  },
+  {
+    "mexc_symbol": "DRBUSDT",
+    "base_asset": "DRB",
+    "notes": "Symbol DRB not found in CMC data"
+  },
+  {
+    "mexc_symbol": "NSGUSDT",
+    "base_asset": "NSG",
+    "notes": "Symbol NSG not found in CMC data"
+  },
+  {
+    "mexc_symbol": "SOLOMONUSDT",
+    "base_asset": "SOLOMON",
+    "notes": "Symbol SOLOMON not found in CMC data"
+  },
+  {
+    "mexc_symbol": "HANDYUSDT",
+    "base_asset": "HANDY",
+    "notes": "Symbol HANDY not found in CMC data"
+  },
+  {
+    "mexc_symbol": "TACAIUSDT",
+    "base_asset": "TACAI",
+    "notes": "Symbol TACAI not found in CMC data"
+  },
+  {
+    "mexc_symbol": "GHTUSDT",
+    "base_asset": "GHT",
+    "notes": "Symbol GHT not found in CMC data"
+  },
+  {
+    "mexc_symbol": "TRIARCUSDT",
+    "base_asset": "TRIARC",
+    "notes": "Symbol TRIARC not found in CMC data"
+  },
+  {
+    "mexc_symbol": "CROWN2USDT",
+    "base_asset": "CROWN2",
+    "notes": "Symbol CROWN2 not found in CMC data"
+  },
+  {
+    "mexc_symbol": "IIICCUSDT",
+    "base_asset": "IIICC",
+    "notes": "Symbol IIICC not found in CMC data"
+  },
+  {
+    "mexc_symbol": "FNTIOUSDT",
+    "base_asset": "FNTIO",
+    "notes": "Symbol FNTIO not found in CMC data"
+  },
+  {
+    "mexc_symbol": "PORTUMAUSDT",
+    "base_asset": "PORTUMA",
+    "notes": "Symbol PORTUMA not found in CMC data"
+  },
+  {
+    "mexc_symbol": "VEREMUSDT",
+    "base_asset": "VEREM",
+    "notes": "Symbol VEREM not found in CMC data"
+  },
+  {
+    "mexc_symbol": "OBORTECHUSDT",
+    "base_asset": "OBORTECH",
+    "notes": "Symbol OBORTECH not found in CMC data"
+  },
+  {
+    "mexc_symbol": "OKMUSDT",
+    "base_asset": "OKM",
+    "notes": "Symbol OKM not found in CMC data"
+  },
+  {
+    "mexc_symbol": "TEAFIUSDT",
+    "base_asset": "TEAFI",
+    "notes": "Symbol TEAFI not found in CMC data"
+  },
+  {
+    "mexc_symbol": "TFIUSDT",
+    "base_asset": "TFI",
+    "notes": "Symbol TFI not found in CMC data"
+  },
+  {
+    "mexc_symbol": "MONGUSDT",
+    "base_asset": "MONG",
+    "notes": "Symbol MONG not found in CMC data"
+  },
+  {
+    "mexc_symbol": "AXLTUSDT",
+    "base_asset": "AXLT",
+    "notes": "Symbol AXLT not found in CMC data"
+  },
+  {
+    "mexc_symbol": "SOEXUSDT",
+    "base_asset": "SOEX",
+    "notes": "Symbol SOEX not found in CMC data"
+  },
+  {
+    "mexc_symbol": "ETHEREXUSDT",
+    "base_asset": "ETHEREX",
+    "notes": "Symbol ETHEREX not found in CMC data"
+  },
+  {
+    "mexc_symbol": "TROLLSOLUSDT",
+    "base_asset": "TROLLSOL",
+    "notes": "Symbol TROLLSOL not found in CMC data"
+  },
+  {
+    "mexc_symbol": "XWGTUSDT",
+    "base_asset": "XWGT",
+    "notes": "Symbol XWGT not found in CMC data"
+  },
+  {
+    "mexc_symbol": "JESSEUSDT",
+    "base_asset": "JESSE",
+    "notes": "Symbol JESSE not found in CMC data"
+  },
+  {
+    "mexc_symbol": "TIXUSDT",
+    "base_asset": "TIX",
+    "notes": "Symbol TIX not found in CMC data"
+  },
+  {
+    "mexc_symbol": "NEIROCTOUSDT",
+    "base_asset": "NEIROCTO",
+    "notes": "Symbol NEIROCTO not found in CMC data"
+  },
+  {
+    "mexc_symbol": "MINXUSDT",
+    "base_asset": "MINX",
+    "notes": "Symbol MINX not found in CMC data"
+  },
+  {
+    "mexc_symbol": "UOMIUSDT",
+    "base_asset": "UOMI",
+    "notes": "Symbol UOMI not found in CMC data"
+  },
+  {
+    "mexc_symbol": "DVOUSDT",
+    "base_asset": "DVO",
+    "notes": "Symbol DVO not found in CMC data"
+  },
+  {
+    "mexc_symbol": "FUTUREUSDT",
+    "base_asset": "FUTURE",
+    "notes": "Symbol FUTURE not found in CMC data"
+  },
+  {
+    "mexc_symbol": "PLTXUSDT",
+    "base_asset": "PLTX",
+    "notes": "Symbol PLTX not found in CMC data"
+  },
+  {
+    "mexc_symbol": "WBTCUSDT",
+    "base_asset": "WBTC",
+    "notes": "Symbol WBTC not found in CMC data"
+  },
+  {
+    "mexc_symbol": "TONNYUSDT",
+    "base_asset": "TONNY",
+    "notes": "Symbol TONNY not found in CMC data"
+  },
+  {
+    "mexc_symbol": "CMC20USDT",
+    "base_asset": "CMC20",
+    "notes": "Symbol CMC20 not found in CMC data"
+  },
+  {
+    "mexc_symbol": "CULTDAOUSDT",
+    "base_asset": "CULTDAO",
+    "notes": "Symbol CULTDAO not found in CMC data"
+  },
+  {
+    "mexc_symbol": "BIT1USDT",
+    "base_asset": "BIT1",
+    "notes": "Symbol BIT1 not found in CMC data"
+  },
+  {
+    "mexc_symbol": "DPNUSDT",
+    "base_asset": "DPN",
+    "notes": "Symbol DPN not found in CMC data"
+  },
+  {
+    "mexc_symbol": "SDBUSDT",
+    "base_asset": "SDB",
+    "notes": "Symbol SDB not found in CMC data"
+  },
+  {
+    "mexc_symbol": "PUMPBTCUSDT",
+    "base_asset": "PUMPBTC",
+    "notes": "Symbol PUMPBTC not found in CMC data"
+  },
+  {
+    "mexc_symbol": "LAIKAL2USDT",
+    "base_asset": "LAIKAL2",
+    "notes": "Symbol LAIKAL2 not found in CMC data"
+  },
+  {
+    "mexc_symbol": "SRCUSDT",
+    "base_asset": "SRC",
+    "notes": "Symbol SRC not found in CMC data"
+  },
+  {
+    "mexc_symbol": "RUJIUSDT",
+    "base_asset": "RUJI",
+    "notes": "Symbol RUJI not found in CMC data"
+  },
+  {
+    "mexc_symbol": "POKEUSDT",
+    "base_asset": "POKE",
+    "notes": "Symbol POKE not found in CMC data"
+  },
+  {
+    "mexc_symbol": "STEPNUSDT",
+    "base_asset": "STEPN",
+    "notes": "Symbol STEPN not found in CMC data"
+  },
+  {
+    "mexc_symbol": "NEXMUSDT",
+    "base_asset": "NEXM",
+    "notes": "Symbol NEXM not found in CMC data"
+  },
+  {
+    "mexc_symbol": "AITPROTOCOLUSDT",
+    "base_asset": "AITPROTOCOL",
+    "notes": "Symbol AITPROTOCOL not found in CMC data"
+  },
+  {
+    "mexc_symbol": "BDCUSDT",
+    "base_asset": "BDC",
+    "notes": "Symbol BDC not found in CMC data"
+  },
+  {
+    "mexc_symbol": "CPFCUSDT",
+    "base_asset": "CPFC",
+    "notes": "Symbol CPFC not found in CMC data"
+  },
+  {
+    "mexc_symbol": "DANGNNUSDT",
+    "base_asset": "DANGNN",
+    "notes": "Symbol DANGNN not found in CMC data"
+  },
+  {
+    "mexc_symbol": "CATCOINUSDT",
+    "base_asset": "CATCOIN",
+    "notes": "Symbol CATCOIN not found in CMC data"
+  },
+  {
+    "mexc_symbol": "PIEBSCUSDT",
+    "base_asset": "PIEBSC",
+    "notes": "Symbol PIEBSC not found in CMC data"
+  },
+  {
+    "mexc_symbol": "FAKTUSDT",
+    "base_asset": "FAKT",
+    "notes": "Symbol FAKT not found in CMC data"
+  },
+  {
+    "mexc_symbol": "SERUSDT",
+    "base_asset": "SER",
+    "notes": "Symbol SER not found in CMC data"
+  },
+  {
+    "mexc_symbol": "FAVEUSDT",
+    "base_asset": "FAVE",
+    "notes": "Symbol FAVE not found in CMC data"
+  },
+  {
+    "mexc_symbol": "NAITUSDT",
+    "base_asset": "NAIT",
+    "notes": "Symbol NAIT not found in CMC data"
+  },
+  {
+    "mexc_symbol": "IXFIUSDT",
+    "base_asset": "IXFI",
+    "notes": "Symbol IXFI not found in CMC data"
+  },
+  {
+    "mexc_symbol": "WOLFTONUSDT",
+    "base_asset": "WOLFTON",
+    "notes": "Symbol WOLFTON not found in CMC data"
+  },
+  {
+    "mexc_symbol": "DRAGON404USDT",
+    "base_asset": "DRAGON404",
+    "notes": "Symbol DRAGON404 not found in CMC data"
+  },
+  {
+    "mexc_symbol": "CHANGEUSDT",
+    "base_asset": "CHANGE",
+    "notes": "Symbol CHANGE not found in CMC data"
+  },
+  {
+    "mexc_symbol": "TRU1USDT",
+    "base_asset": "TRU1",
+    "notes": "Symbol TRU1 not found in CMC data"
+  },
+  {
+    "mexc_symbol": "ATTONUSDT",
+    "base_asset": "ATTON",
+    "notes": "Symbol ATTON not found in CMC data"
+  },
+  {
+    "mexc_symbol": "VELODROMEUSDT",
+    "base_asset": "VELODROME",
+    "notes": "Symbol VELODROME not found in CMC data"
+  },
+  {
+    "mexc_symbol": "ORAIXUSDT",
+    "base_asset": "ORAIX",
+    "notes": "Symbol ORAIX not found in CMC data"
+  },
+  {
+    "mexc_symbol": "BELIEVEUSDT",
+    "base_asset": "BELIEVE",
+    "notes": "Symbol BELIEVE not found in CMC data"
+  },
+  {
+    "mexc_symbol": "WNXMUSDT",
+    "base_asset": "WNXM",
+    "notes": "Symbol WNXM not found in CMC data"
+  },
+  {
+    "mexc_symbol": "MICROUSDT",
+    "base_asset": "MICRO",
+    "notes": "Symbol MICRO not found in CMC data"
+  },
+  {
+    "mexc_symbol": "DLBUSDT",
+    "base_asset": "DLB",
+    "notes": "Symbol DLB not found in CMC data"
+  },
+  {
+    "mexc_symbol": "HOLDSTATIONUSDT",
+    "base_asset": "HOLDSTATION",
+    "notes": "Symbol HOLDSTATION not found in CMC data"
+  },
+  {
+    "mexc_symbol": "BEAMXUSDT",
+    "base_asset": "BEAMX",
+    "notes": "Symbol BEAMX not found in CMC data"
+  },
+  {
+    "mexc_symbol": "LUNAIUSDT",
+    "base_asset": "LUNAI",
+    "notes": "Symbol LUNAI not found in CMC data"
+  },
+  {
+    "mexc_symbol": "CVNUSDT",
+    "base_asset": "CVN",
+    "notes": "Symbol CVN not found in CMC data"
+  },
+  {
+    "mexc_symbol": "VRLUSDT",
+    "base_asset": "VRL",
+    "notes": "Symbol VRL not found in CMC data"
+  },
+  {
+    "mexc_symbol": "GVLUSDT",
+    "base_asset": "GVL",
+    "notes": "Symbol GVL not found in CMC data"
+  },
+  {
+    "mexc_symbol": "KRYONUSDT",
+    "base_asset": "KRYON",
+    "notes": "Symbol KRYON not found in CMC data"
+  },
+  {
+    "mexc_symbol": "KOMUSDT",
+    "base_asset": "KOM",
+    "notes": "Symbol KOM not found in CMC data"
+  },
+  {
+    "mexc_symbol": "SUPERFLUIDUSDT",
+    "base_asset": "SUPERFLUID",
+    "notes": "Symbol SUPERFLUID not found in CMC data"
+  },
+  {
+    "mexc_symbol": "GXTUSDT",
+    "base_asset": "GXT",
+    "notes": "Symbol GXT not found in CMC data"
+  },
+  {
+    "mexc_symbol": "AUTONOMIUSDT",
+    "base_asset": "AUTONOMI",
+    "notes": "Symbol AUTONOMI not found in CMC data"
+  },
+  {
+    "mexc_symbol": "HELIUSDT",
+    "base_asset": "HELI",
+    "notes": "Symbol HELI not found in CMC data"
+  },
+  {
+    "mexc_symbol": "CHONKYUSDT",
+    "base_asset": "CHONKY",
+    "notes": "Symbol CHONKY not found in CMC data"
+  },
+  {
+    "mexc_symbol": "XEMPIREUSDT",
+    "base_asset": "XEMPIRE",
+    "notes": "Symbol XEMPIRE not found in CMC data"
+  },
+  {
+    "mexc_symbol": "EVRUSDT",
+    "base_asset": "EVR",
+    "notes": "Symbol EVR not found in CMC data"
+  },
+  {
+    "mexc_symbol": "JOYSTREAMUSDT",
+    "base_asset": "JOYSTREAM",
+    "notes": "Symbol JOYSTREAM not found in CMC data"
+  },
+  {
+    "mexc_symbol": "SAFE4USDT",
+    "base_asset": "SAFE4",
+    "notes": "Symbol SAFE4 not found in CMC data"
+  },
+  {
+    "mexc_symbol": "1DOLLARUSDT",
+    "base_asset": "1DOLLAR",
+    "notes": "Symbol 1DOLLAR not found in CMC data"
+  },
+  {
+    "mexc_symbol": "AMOREUSDT",
+    "base_asset": "AMORE",
+    "notes": "Symbol AMORE not found in CMC data"
+  },
+  {
+    "mexc_symbol": "NLINKUSDT",
+    "base_asset": "NLINK",
+    "notes": "Symbol NLINK not found in CMC data"
+  },
+  {
+    "mexc_symbol": "SUIPUSDT",
+    "base_asset": "SUIP",
+    "notes": "Symbol SUIP not found in CMC data"
+  },
+  {
+    "mexc_symbol": "GAMEVIRTUALUSDT",
+    "base_asset": "GAMEVIRTUAL",
+    "notes": "Symbol GAMEVIRTUAL not found in CMC data"
+  },
+  {
+    "mexc_symbol": "LAIKAUSDT",
+    "base_asset": "LAIKA",
+    "notes": "Symbol LAIKA not found in CMC data"
+  },
+  {
+    "mexc_symbol": "BOBACATUSDT",
+    "base_asset": "BOBACAT",
+    "notes": "Symbol BOBACAT not found in CMC data"
+  },
+  {
+    "mexc_symbol": "FSVUSDT",
+    "base_asset": "FSV",
+    "notes": "Symbol FSV not found in CMC data"
+  },
+  {
+    "mexc_symbol": "MASKSOLUSDT",
+    "base_asset": "MASKSOL",
+    "notes": "Symbol MASKSOL not found in CMC data"
+  },
+  {
+    "mexc_symbol": "BROCCOLIF3BUSDT",
+    "base_asset": "BROCCOLIF3B",
+    "notes": "Symbol BROCCOLIF3B not found in CMC data"
+  },
+  {
+    "mexc_symbol": "STETHUSDT",
+    "base_asset": "STETH",
+    "notes": "Symbol STETH not found in CMC data"
+  },
+  {
+    "mexc_symbol": "MIHUSDT",
+    "base_asset": "MIH",
+    "notes": "Symbol MIH not found in CMC data"
+  },
+  {
+    "mexc_symbol": "FREEDOMUSDT",
+    "base_asset": "FREEDOM",
+    "notes": "Symbol FREEDOM not found in CMC data"
+  },
+  {
+    "mexc_symbol": "BITBOARDUSDT",
+    "base_asset": "BITBOARD",
+    "notes": "Symbol BITBOARD not found in CMC data"
+  },
+  {
+    "mexc_symbol": "BUTTHOLEUSDT",
+    "base_asset": "BUTTHOLE",
+    "notes": "Symbol BUTTHOLE not found in CMC data"
+  },
+  {
+    "mexc_symbol": "VIVIUSDT",
+    "base_asset": "VIVI",
+    "notes": "Symbol VIVI not found in CMC data"
+  },
+  {
+    "mexc_symbol": "SACHICOINUSDT",
+    "base_asset": "SACHICOIN",
+    "notes": "Symbol SACHICOIN not found in CMC data"
+  },
+  {
+    "mexc_symbol": "MINDHIVEUSDT",
+    "base_asset": "MINDHIVE",
+    "notes": "Symbol MINDHIVE not found in CMC data"
+  },
+  {
+    "mexc_symbol": "GAME2USDT",
+    "base_asset": "GAME2",
+    "notes": "Symbol GAME2 not found in CMC data"
+  },
+  {
+    "mexc_symbol": "LITASUSDT",
+    "base_asset": "LITAS",
+    "notes": "Symbol LITAS not found in CMC data"
+  },
+  {
+    "mexc_symbol": "AVAAIUSDT",
+    "base_asset": "AVAAI",
+    "notes": "Symbol AVAAI not found in CMC data"
+  },
+  {
+    "mexc_symbol": "ADOUSDT",
+    "base_asset": "ADO",
+    "notes": "Symbol ADO not found in CMC data"
+  },
+  {
+    "mexc_symbol": "LANDSHAREUSDT",
+    "base_asset": "LANDSHARE",
+    "notes": "Symbol LANDSHARE not found in CMC data"
+  },
+  {
+    "mexc_symbol": "CHISAIUSDT",
+    "base_asset": "CHISAI",
+    "notes": "Symbol CHISAI not found in CMC data"
+  },
+  {
+    "mexc_symbol": "OPTUSDT",
+    "base_asset": "OPT",
+    "notes": "Symbol OPT not found in CMC data"
+  },
+  {
+    "mexc_symbol": "FRCUSDT",
+    "base_asset": "FRC",
+    "notes": "Symbol FRC not found in CMC data"
+  },
+  {
+    "mexc_symbol": "MBOOMUSDT",
+    "base_asset": "MBOOM",
+    "notes": "Symbol MBOOM not found in CMC data"
+  },
+  {
+    "mexc_symbol": "SPCFINUSDT",
+    "base_asset": "SPCFIN",
+    "notes": "Symbol SPCFIN not found in CMC data"
+  },
+  {
+    "mexc_symbol": "BULLSUSDT",
+    "base_asset": "BULLS",
+    "notes": "Symbol BULLS not found in CMC data"
+  },
+  {
+    "mexc_symbol": "SOPHIAUSDT",
+    "base_asset": "SOPHIA",
+    "notes": "Symbol SOPHIA not found in CMC data"
+  },
+  {
+    "mexc_symbol": "SLEEPLESSAIUSDT",
+    "base_asset": "SLEEPLESSAI",
+    "notes": "Symbol SLEEPLESSAI not found in CMC data"
+  },
+  {
+    "mexc_symbol": "SACUSDT",
+    "base_asset": "SAC",
+    "notes": "Symbol SAC not found in CMC data"
+  },
+  {
+    "mexc_symbol": "LIQUIDIUMUSDT",
+    "base_asset": "LIQUIDIUM",
+    "notes": "Symbol LIQUIDIUM not found in CMC data"
+  },
+  {
+    "mexc_symbol": "SOHUSDT",
+    "base_asset": "SOH",
+    "notes": "Symbol SOH not found in CMC data"
+  },
+  {
+    "mexc_symbol": "TRILLIONSUSDT",
+    "base_asset": "TRILLIONS",
+    "notes": "Symbol TRILLIONS not found in CMC data"
+  },
+  {
+    "mexc_symbol": "EPILEPTICUSDT",
+    "base_asset": "EPILEPTIC",
+    "notes": "Symbol EPILEPTIC not found in CMC data"
+  },
+  {
+    "mexc_symbol": "TESTICLEUSDT",
+    "base_asset": "TESTICLE",
+    "notes": "Symbol TESTICLE not found in CMC data"
+  },
+  {
+    "mexc_symbol": "PEPE2USDT",
+    "base_asset": "PEPE2",
+    "notes": "Symbol PEPE2 not found in CMC data"
+  },
+  {
+    "mexc_symbol": "WAXLUSDT",
+    "base_asset": "WAXL",
+    "notes": "Symbol WAXL not found in CMC data"
+  },
+  {
+    "mexc_symbol": "CALCIFYUSDT",
+    "base_asset": "CALCIFY",
+    "notes": "Symbol CALCIFY not found in CMC data"
+  },
+  {
+    "mexc_symbol": "LUFCUSDT",
+    "base_asset": "LUFC",
+    "notes": "Symbol LUFC not found in CMC data"
+  },
+  {
+    "mexc_symbol": "BENQIUSDT",
+    "base_asset": "BENQI",
+    "notes": "Symbol BENQI not found in CMC data"
+  },
+  {
+    "mexc_symbol": "SOLAXYUSDT",
+    "base_asset": "SOLAXY",
+    "notes": "Symbol SOLAXY not found in CMC data"
+  },
+  {
+    "mexc_symbol": "LBTCUSDT",
+    "base_asset": "LBTC",
+    "notes": "Symbol LBTC not found in CMC data"
+  },
+  {
+    "mexc_symbol": "PLAYSOLANAUSDT",
+    "base_asset": "PLAYSOLANA",
+    "notes": "Symbol PLAYSOLANA not found in CMC data"
+  },
+  {
+    "mexc_symbol": "ALTLAYERUSDT",
+    "base_asset": "ALTLAYER",
+    "notes": "Symbol ALTLAYER not found in CMC data"
+  },
+  {
+    "mexc_symbol": "SRDSUSDT",
+    "base_asset": "SRDS",
+    "notes": "Symbol SRDS not found in CMC data"
+  },
+  {
+    "mexc_symbol": "DOGEGOVUSDT",
+    "base_asset": "DOGEGOV",
+    "notes": "Symbol DOGEGOV not found in CMC data"
+  },
+  {
+    "mexc_symbol": "SOLTOMATOUSDT",
+    "base_asset": "SOLTOMATO",
+    "notes": "Symbol SOLTOMATO not found in CMC data"
+  },
+  {
+    "mexc_symbol": "PANTHERUSDT",
+    "base_asset": "PANTHER",
+    "notes": "Symbol PANTHER not found in CMC data"
+  },
+  {
+    "mexc_symbol": "HARRYUSDT",
+    "base_asset": "HARRY",
+    "notes": "Symbol HARRY not found in CMC data"
+  },
+  {
+    "mexc_symbol": "TNKUSDT",
+    "base_asset": "TNK",
+    "notes": "Symbol TNK not found in CMC data"
+  },
+  {
+    "mexc_symbol": "CRATUSDT",
+    "base_asset": "CRAT",
+    "notes": "Symbol CRAT not found in CMC data"
+  },
+  {
+    "mexc_symbol": "MKITUSDT",
+    "base_asset": "MKIT",
+    "notes": "Symbol MKIT not found in CMC data"
+  },
+  {
+    "mexc_symbol": "DDMTUSDT",
+    "base_asset": "DDMT",
+    "notes": "Symbol DDMT not found in CMC data"
+  },
+  {
+    "mexc_symbol": "MXSOLUSDT",
+    "base_asset": "MXSOL",
+    "notes": "Symbol MXSOL not found in CMC data"
+  },
+  {
+    "mexc_symbol": "WAFFLESUSDT",
+    "base_asset": "WAFFLES",
+    "notes": "Symbol WAFFLES not found in CMC data"
+  },
+  {
+    "mexc_symbol": "ELKUSDT",
+    "base_asset": "ELK",
+    "notes": "Symbol ELK not found in CMC data"
+  },
+  {
+    "mexc_symbol": "STARHEROESUSDT",
+    "base_asset": "STARHEROES",
+    "notes": "Symbol STARHEROES not found in CMC data"
+  },
+  {
+    "mexc_symbol": "ALTHEAUSDT",
+    "base_asset": "ALTHEA",
+    "notes": "Symbol ALTHEA not found in CMC data"
+  },
+  {
+    "mexc_symbol": "CLGOUSDT",
+    "base_asset": "CLGO",
+    "notes": "Symbol CLGO not found in CMC data"
+  },
+  {
+    "mexc_symbol": "AURASOLUSDT",
+    "base_asset": "AURASOL",
+    "notes": "Symbol AURASOL not found in CMC data"
+  },
+  {
+    "mexc_symbol": "TERRAUSDT",
+    "base_asset": "TERRA",
+    "notes": "Symbol TERRA not found in CMC data"
+  },
+  {
+    "mexc_symbol": "AGROUSDT",
+    "base_asset": "AGRO",
+    "notes": "Symbol AGRO not found in CMC data"
+  },
+  {
+    "mexc_symbol": "VERDRAUSDT",
+    "base_asset": "VERDRA",
+    "notes": "Symbol VERDRA not found in CMC data"
+  },
+  {
+    "mexc_symbol": "DCTUSDT",
+    "base_asset": "DCT",
+    "notes": "Symbol DCT not found in CMC data"
+  },
+  {
+    "mexc_symbol": "XRPCUSDT",
+    "base_asset": "XRPC",
+    "notes": "Symbol XRPC not found in CMC data"
+  },
+  {
+    "mexc_symbol": "YBRUSDT",
+    "base_asset": "YBR",
+    "notes": "Symbol YBR not found in CMC data"
+  },
+  {
+    "mexc_symbol": "ARCSOLUSDT",
+    "base_asset": "ARCSOL",
+    "notes": "Symbol ARCSOL not found in CMC data"
+  },
+  {
+    "mexc_symbol": "HILOUSDT",
+    "base_asset": "HILO",
+    "notes": "Symbol HILO not found in CMC data"
+  },
+  {
+    "mexc_symbol": "PRTGUSDT",
+    "base_asset": "PRTG",
+    "notes": "Symbol PRTG not found in CMC data"
+  },
+  {
+    "mexc_symbol": "GODEUSDT",
+    "base_asset": "GODE",
+    "notes": "Symbol GODE not found in CMC data"
+  },
+  {
+    "mexc_symbol": "JOLTUSDT",
+    "base_asset": "JOLT",
+    "notes": "Symbol JOLT not found in CMC data"
+  },
+  {
+    "mexc_symbol": "CKUSDTUSDT",
+    "base_asset": "CKUSDT",
+    "notes": "Symbol CKUSDT not found in CMC data"
+  },
+  {
+    "mexc_symbol": "RALPHUSDT",
+    "base_asset": "RALPH",
+    "notes": "Symbol RALPH not found in CMC data"
+  },
+  {
+    "mexc_symbol": "114514USDT",
+    "base_asset": "114514",
+    "notes": "Symbol 114514 not found in CMC data"
+  },
+  {
+    "mexc_symbol": "FITUSDT",
+    "base_asset": "FIT",
+    "notes": "Symbol FIT not found in CMC data"
+  },
+  {
+    "mexc_symbol": "TORUMUSDT",
+    "base_asset": "TORUM",
+    "notes": "Symbol TORUM not found in CMC data"
+  },
+  {
+    "mexc_symbol": "REKTCOINUSDT",
+    "base_asset": "REKTCOIN",
+    "notes": "Symbol REKTCOIN not found in CMC data"
+  },
+  {
+    "mexc_symbol": "KLARAUSDT",
+    "base_asset": "KLARA",
+    "notes": "Symbol KLARA not found in CMC data"
+  },
+  {
+    "mexc_symbol": "MONIEUSDT",
+    "base_asset": "MONIE",
+    "notes": "Symbol MONIE not found in CMC data"
+  },
+  {
+    "mexc_symbol": "SPACEMVCUSDT",
+    "base_asset": "SPACEMVC",
+    "notes": "Symbol SPACEMVC not found in CMC data"
+  },
+  {
+    "mexc_symbol": "THENTUSDT",
+    "base_asset": "THENT",
+    "notes": "Symbol THENT not found in CMC data"
+  },
+  {
+    "mexc_symbol": "REALTOKENUSDT",
+    "base_asset": "REALTOKEN",
+    "notes": "Symbol REALTOKEN not found in CMC data"
+  },
+  {
+    "mexc_symbol": "ARIUSDT",
+    "base_asset": "ARI",
+    "notes": "Symbol ARI not found in CMC data"
+  },
+  {
+    "mexc_symbol": "EXSUSDT",
+    "base_asset": "EXS",
+    "notes": "Symbol EXS not found in CMC data"
+  },
+  {
+    "mexc_symbol": "AGUSTOUSDT",
+    "base_asset": "AGUSTO",
+    "notes": "Symbol AGUSTO not found in CMC data"
+  },
+  {
+    "mexc_symbol": "AASTUSDT",
+    "base_asset": "AAST",
+    "notes": "Symbol AAST not found in CMC data"
+  },
+  {
+    "mexc_symbol": "KPCUSDT",
+    "base_asset": "KPC",
+    "notes": "Symbol KPC not found in CMC data"
+  },
+  {
+    "mexc_symbol": "GAMESTOPUSDT",
+    "base_asset": "GAMESTOP",
+    "notes": "Symbol GAMESTOP not found in CMC data"
+  },
+  {
+    "mexc_symbol": "PHTUSDT",
+    "base_asset": "PHT",
+    "notes": "Symbol PHT not found in CMC data"
+  },
+  {
+    "mexc_symbol": "FNSTUSDT",
+    "base_asset": "FNST",
+    "notes": "Symbol FNST not found in CMC data"
+  },
+  {
+    "mexc_symbol": "OPSUSDT",
+    "base_asset": "OPS",
+    "notes": "Symbol OPS not found in CMC data"
+  },
+  {
+    "mexc_symbol": "ANDYETHUSDT",
+    "base_asset": "ANDYETH",
+    "notes": "Symbol ANDYETH not found in CMC data"
+  },
+  {
+    "mexc_symbol": "ICTUSDT",
+    "base_asset": "ICT",
+    "notes": "Symbol ICT not found in CMC data"
+  },
+  {
+    "mexc_symbol": "MAGAETHUSDT",
+    "base_asset": "MAGAETH",
+    "notes": "Symbol MAGAETH not found in CMC data"
+  },
+  {
+    "mexc_symbol": "CKECUSDT",
+    "base_asset": "CKEC",
+    "notes": "Symbol CKEC not found in CMC data"
+  },
+  {
+    "mexc_symbol": "FAKEAIUSDT",
+    "base_asset": "FAKEAI",
+    "notes": "Symbol FAKEAI not found in CMC data"
+  },
+  {
+    "mexc_symbol": "AIXTUSDT",
+    "base_asset": "AIXT",
+    "notes": "Symbol AIXT not found in CMC data"
+  },
+  {
+    "mexc_symbol": "WEETHUSDT",
+    "base_asset": "WEETH",
+    "notes": "Symbol WEETH not found in CMC data"
+  },
+  {
+    "mexc_symbol": "DEFACTORUSDT",
+    "base_asset": "DEFACTOR",
+    "notes": "Symbol DEFACTOR not found in CMC data"
+  },
+  {
+    "mexc_symbol": "YOLOUSDT",
+    "base_asset": "YOLO",
+    "notes": "Symbol YOLO not found in CMC data"
+  },
+  {
+    "mexc_symbol": "SFINUSDT",
+    "base_asset": "SFIN",
+    "notes": "Symbol SFIN not found in CMC data"
+  },
+  {
+    "mexc_symbol": "CSIGMAUSDT",
+    "base_asset": "CSIGMA",
+    "notes": "Symbol CSIGMA not found in CMC data"
+  },
+  {
+    "mexc_symbol": "KMAUSDT",
+    "base_asset": "KMA",
+    "notes": "Symbol KMA not found in CMC data"
+  },
+  {
+    "mexc_symbol": "STRAWBERRYAIUSDT",
+    "base_asset": "STRAWBERRYAI",
+    "notes": "Symbol STRAWBERRYAI not found in CMC data"
+  },
+  {
+    "mexc_symbol": "ASTRAAIUSDT",
+    "base_asset": "ASTRAAI",
+    "notes": "Symbol ASTRAAI not found in CMC data"
+  },
+  {
+    "mexc_symbol": "BFLOKIUSDT",
+    "base_asset": "BFLOKI",
+    "notes": "Symbol BFLOKI not found in CMC data"
+  },
+  {
+    "mexc_symbol": "TIVAUSDT",
+    "base_asset": "TIVA",
+    "notes": "Symbol TIVA not found in CMC data"
+  },
+  {
+    "mexc_symbol": "GORILLABSCUSDT",
+    "base_asset": "GORILLABSC",
+    "notes": "Symbol GORILLABSC not found in CMC data"
+  },
+  {
+    "mexc_symbol": "GPTPLUSUSDT",
+    "base_asset": "GPTPLUS",
+    "notes": "Symbol GPTPLUS not found in CMC data"
+  },
+  {
+    "mexc_symbol": "AZENUSDT",
+    "base_asset": "AZEN",
+    "notes": "Symbol AZEN not found in CMC data"
+  },
+  {
+    "mexc_symbol": "BVGUSDT",
+    "base_asset": "BVG",
+    "notes": "Symbol BVG not found in CMC data"
+  },
+  {
+    "mexc_symbol": "PHOTOUSDT",
+    "base_asset": "PHOTO",
+    "notes": "Symbol PHOTO not found in CMC data"
+  },
+  {
+    "mexc_symbol": "OPTIMUSUSDT",
+    "base_asset": "OPTIMUS",
+    "notes": "Symbol OPTIMUS not found in CMC data"
+  },
+  {
+    "mexc_symbol": "VERDAXUSDT",
+    "base_asset": "VERDAX",
+    "notes": "Symbol VERDAX not found in CMC data"
+  },
+  {
+    "mexc_symbol": "NEIROETHUSDT",
+    "base_asset": "NEIROETH",
+    "notes": "Symbol NEIROETH not found in CMC data"
+  },
+  {
+    "mexc_symbol": "BATTERYUSDT",
+    "base_asset": "BATTERY",
+    "notes": "Symbol BATTERY not found in CMC data"
+  },
+  {
+    "mexc_symbol": "NOMOXUSDT",
+    "base_asset": "NOMOX",
+    "notes": "Symbol NOMOX not found in CMC data"
+  },
+  {
+    "mexc_symbol": "LWOLFUSDT",
+    "base_asset": "LWOLF",
+    "notes": "Symbol LWOLF not found in CMC data"
+  },
+  {
+    "mexc_symbol": "WQUILUSDT",
+    "base_asset": "WQUIL",
+    "notes": "Symbol WQUIL not found in CMC data"
+  },
+  {
+    "mexc_symbol": "AIXDROPUSDT",
+    "base_asset": "AIXDROP",
+    "notes": "Symbol AIXDROP not found in CMC data"
+  },
+  {
+    "mexc_symbol": "BRETTETHUSDT",
+    "base_asset": "BRETTETH",
+    "notes": "Symbol BRETTETH not found in CMC data"
+  },
+  {
+    "mexc_symbol": "BELUGAUSDT",
+    "base_asset": "BELUGA",
+    "notes": "Symbol BELUGA not found in CMC data"
+  },
+  {
+    "mexc_symbol": "JSKUSDT",
+    "base_asset": "JSK",
+    "notes": "Symbol JSK not found in CMC data"
+  },
+  {
+    "mexc_symbol": "NTHUSDT",
+    "base_asset": "NTH",
+    "notes": "Symbol NTH not found in CMC data"
+  },
+  {
+    "mexc_symbol": "WATTUSDT",
+    "base_asset": "WATT",
+    "notes": "Symbol WATT not found in CMC data"
+  }
+]

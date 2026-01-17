@@ -1,0 +1,13 @@
+{
+  "total": 1837,
+  "mapped": 1624,
+  "unmapped": 213,
+  "collisions": 0,
+  "overrides_used": 0,
+  "confidence": {
+    "high": 1624,
+    "medium": 0,
+    "low": 0,
+    "none": 213
+  }
+}
