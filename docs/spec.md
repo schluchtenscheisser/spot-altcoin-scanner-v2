@@ -318,6 +318,7 @@ The scanner is considered successful if:
 
 - daily reports surface relevant candidates
 - reversal setups like the Humanity Protocol example are captured
+- Breakout and Pullback opportunities are captured
 - false positives are manageable
 - performance improves through iterative refinement
 
