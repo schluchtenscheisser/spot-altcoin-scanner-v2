@@ -59,12 +59,13 @@ jobs:
           def scan_package(package_path):
               """Scan a package and return structure."""
               modules = {}
+              base_path = Path(package_path).resolve()
               
-              for py_file in Path(package_path).rglob('*.py'):
-                  rel_path = py_file.relative_to(Path.cwd())
+              for py_file in base_path.rglob('*.py'):
+                  rel_path = str(py_file.relative_to(Path.cwd()))
                   result = analyze_module(py_file)
                   if result:
-                      modules[str(rel_path)] = result
+                      modules[rel_path] = result
               
               return modules
           
