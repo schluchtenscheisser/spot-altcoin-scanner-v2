@@ -1,18 +1,179 @@
 """
-Snapshot creation.
+Snapshot System
+===============
 
-Responsibilities:
-- Build a full snapshot object for the current run:
-  - spec_version, config_version
-  - universe
-  - mapping
-  - market caps
-  - features
-  - scores (breakout, pullback, reversal)
-  - meta info (runtime, counts, etc.)
-- Serialize snapshot as JSON in snapshots/runtime/YYYY-MM-DD.json.
-- Guarantee determinism for backtests and regression analysis.
-
-See docs/data_model.md and docs/backtest.md.
+Creates deterministic daily snapshots for backtesting and reproducibility.
+Snapshots include all pipeline data at a specific point in time.
 """
 
+import logging
+from typing import Dict, Any, List
+from datetime import datetime
+from pathlib import Path
+import json
+
+logger = logging.getLogger(__name__)
+
+
+class SnapshotManager:
+    """Manages daily pipeline snapshots."""
+    
+    def __init__(self, config: Dict[str, Any]):
+        """
+        Initialize snapshot manager.
+        
+        Args:
+            config: Config dict with 'snapshots' section
+        """
+        # Handle both dict and ScannerConfig object
+        if hasattr(config, 'raw'):
+            snapshot_config = config.raw.get('snapshots', {})
+        else:
+            snapshot_config = config.get('snapshots', {})
+        
+        self.snapshots_dir = Path(snapshot_config.get('runtime_dir', 'snapshots/runtime'))
+        
+        # Ensure directory exists
+        self.snapshots_dir.mkdir(parents=True, exist_ok=True)
+        
+        logger.info(f"Snapshot Manager initialized: {self.snapshots_dir}")
+    
+    def create_snapshot(
+        self,
+        run_date: str,
+        universe: List[Dict[str, Any]],
+        filtered: List[Dict[str, Any]],
+        shortlist: List[Dict[str, Any]],
+        features: Dict[str, Dict[str, Any]],
+        reversal_scores: List[Dict[str, Any]],
+        breakout_scores: List[Dict[str, Any]],
+        pullback_scores: List[Dict[str, Any]],
+        metadata: Dict[str, Any] = None
+    ) -> Path:
+        """
+        Create a complete snapshot of the pipeline run.
+        
+        Args:
+            run_date: Date string (YYYY-MM-DD)
+            universe: Full MEXC universe
+            filtered: Post-filter universe
+            shortlist: Shortlisted symbols
+            features: Computed features
+            reversal_scores: Reversal scoring results
+            breakout_scores: Breakout scoring results
+            pullback_scores: Pullback scoring results
+            metadata: Optional metadata
+        
+        Returns:
+            Path to saved snapshot file
+        """
+        logger.info(f"Creating snapshot for {run_date}")
+        
+        snapshot = {
+            'meta': {
+                'date': run_date,
+                'created_at': datetime.utcnow().isoformat() + 'Z',
+                'version': '1.0'
+            },
+            'pipeline': {
+                'universe_count': len(universe),
+                'filtered_count': len(filtered),
+                'shortlist_count': len(shortlist),
+                'features_count': len(features)
+            },
+            'data': {
+                'universe': universe,
+                'filtered': filtered,
+                'shortlist': shortlist,
+                'features': features
+            },
+            'scoring': {
+                'reversals': reversal_scores,
+                'breakouts': breakout_scores,
+                'pullbacks': pullback_scores
+            }
+        }
+        
+        if metadata:
+            snapshot['meta'].update(metadata)
+        
+        # Save snapshot
+        snapshot_path = self.snapshots_dir / f"{run_date}.json"
+        
+        with open(snapshot_path, 'w', encoding='utf-8') as f:
+            json.dump(snapshot, f, indent=2, ensure_ascii=False)
+        
+        # Get file size
+        size_mb = snapshot_path.stat().st_size / (1024 * 1024)
+        
+        logger.info(f"Snapshot saved: {snapshot_path} ({size_mb:.2f} MB)")
+        
+        return snapshot_path
+    
+    def load_snapshot(self, run_date: str) -> Dict[str, Any]:
+        """
+        Load a snapshot by date.
+        
+        Args:
+            run_date: Date string (YYYY-MM-DD)
+        
+        Returns:
+            Snapshot dict
+        
+        Raises:
+            FileNotFoundError: If snapshot doesn't exist
+        """
+        snapshot_path = self.snapshots_dir / f"{run_date}.json"
+        
+        if not snapshot_path.exists():
+            raise FileNotFoundError(f"Snapshot not found: {snapshot_path}")
+        
+        logger.info(f"Loading snapshot: {snapshot_path}")
+        
+        with open(snapshot_path, 'r', encoding='utf-8') as f:
+            snapshot = json.load(f)
+        
+        return snapshot
+    
+    def list_snapshots(self) -> List[str]:
+        """
+        List all available snapshot dates.
+        
+        Returns:
+            List of date strings (YYYY-MM-DD)
+        """
+        snapshots = []
+        
+        for path in self.snapshots_dir.glob("*.json"):
+            date = path.stem  # Filename without extension
+            snapshots.append(date)
+        
+        snapshots.sort()
+        
+        logger.info(f"Found {len(snapshots)} snapshots")
+        
+        return snapshots
+    
+    def get_snapshot_stats(self, run_date: str) -> Dict[str, Any]:
+        """
+        Get statistics about a snapshot without loading full data.
+        
+        Args:
+            run_date: Date string
+        
+        Returns:
+            Stats dict
+        """
+        snapshot = self.load_snapshot(run_date)
+        
+        return {
+            'date': snapshot['meta']['date'],
+            'created_at': snapshot['meta']['created_at'],
+            'universe_count': snapshot['pipeline']['universe_count'],
+            'filtered_count': snapshot['pipeline']['filtered_count'],
+            'shortlist_count': snapshot['pipeline']['shortlist_count'],
+            'features_count': snapshot['pipeline']['features_count'],
+            'reversal_count': len(snapshot['scoring']['reversals']),
+            'breakout_count': len(snapshot['scoring']['breakouts']),
+            'pullback_count': len(snapshot['scoring']['pullbacks'])
+        }
