@@ -50,9 +50,14 @@ def run_pipeline(config: ScannerConfig) -> None:
     logger.info(f"Mode: {run_mode}")
     logger.info("=" * 80)
     
+    # Initialize clients
+    logger.info("\n[INIT] Initializing clients...")
+    mexc = MEXCClient()
+    cmc = MarketCapClient(api_key=config.cmc_api_key)
+    logger.info("✓ Clients initialized")
+    
     # Step 1: Fetch universe (MEXC Spot USDT)
     logger.info("\n[1/10] Fetching MEXC universe...")
-    mexc = MEXCClient()
     universe = mexc.get_spot_usdt_symbols(use_cache=use_cache)
     logger.info(f"✓ Universe: {len(universe)} USDT pairs")
     
@@ -62,32 +67,31 @@ def run_pipeline(config: ScannerConfig) -> None:
     ticker_map = {t['symbol']: t for t in tickers}
     logger.info(f"  ✓ Tickers: {len(ticker_map)} symbols")
     
-    # Step 2: Fetch market cap listings
-    logger.info("\n[2/10] Fetching market cap data...")
-    cmc = MarketCapClient(api_key=config.cmc_api_key)
-    # CMC data loaded inside mapper
+    # Step 2 & 3: Fetch market cap + Run mapping layer
+    logger.info("\n[2-3/10] Fetching market cap & mapping...")
+    cmc_listings = cmc.get_listings(use_cache=use_cache)
+    cmc_symbol_map = cmc.build_symbol_map(cmc_listings)
+    logger.info(f"  ✓ CMC: {len(cmc_symbol_map)} symbols")
     
-    # Step 3: Run mapping layer
-    logger.info("\n[3/10] Mapping MEXC → CMC...")
-    mapper = SymbolMapper(cmc, config)
-    mapping_result = mapper.map_universe(universe, use_cache=use_cache)
-    logger.info(f"✓ Mapped: {mapping_result['mapped_count']}/{mapping_result['total_count']} "
-               f"({mapping_result['mapping_rate']:.1f}%)")
+    mapper = SymbolMapper()
+    mapping_results = mapper.map_universe(universe, cmc_symbol_map)
+    logger.info(f"✓ Mapped: {mapper.stats['mapped']}/{mapper.stats['total']} "
+               f"({mapper.stats['mapped']/mapper.stats['total']*100:.1f}%)")
     
     # Prepare data for filters
     symbols_with_data = []
     for symbol in universe:
-        if symbol not in mapping_result['mapped']:
+        result = mapping_results.get(symbol)
+        if not result or not result.mapped:
             continue
         
         ticker = ticker_map.get(symbol, {})
-        mcap_data = mapping_result['mapped'][symbol]
         
         symbols_with_data.append({
             'symbol': symbol,
             'base': symbol.replace('USDT', ''),
             'quote_volume_24h': float(ticker.get('quoteVolume', 0)),
-            'market_cap': mcap_data.get('market_cap')
+            'market_cap': result._get_market_cap()
         })
     
     # Step 4: Apply hard filters
