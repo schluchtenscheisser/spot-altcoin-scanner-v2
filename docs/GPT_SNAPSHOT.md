@@ -1,7 +1,7 @@
 # Spot Altcoin Scanner • GPT Snapshot
 
-**Generated:** 2026-01-17 18:43 UTC  
-**Commit:** `e296d19` (e296d193b17db7ac690f9b9143e2cfffe38bc9b0)  
+**Generated:** 2026-01-17 20:37 UTC  
+**Commit:** `129fde2` (129fde29b15de6091c2ba3346d668315eade02f4)  
 **Status:** MVP Complete (Phase 6)  
 
 ---
@@ -38,6 +38,7 @@
 | `scanner/main.py` | - | `parse_args`, `main` |
 | `scanner/pipeline/__init__.py` | - | `run_pipeline` |
 | `scanner/pipeline/backtest_runner.py` | - | - |
+| `scanner/pipeline/excel_output.py` | `ExcelReportGenerator` | - |
 | `scanner/pipeline/features.py` | `FeatureEngine` | - |
 | `scanner/pipeline/filters.py` | `UniverseFilters` | - |
 | `scanner/pipeline/ohlcv.py` | `OHLCVFetcher` | - |
@@ -54,8 +55,8 @@
 | `scanner/utils/time_utils.py` | - | `utc_now`, `utc_timestamp`, `utc_date`, `parse_timestamp`, `timestamp_to_ms` ... (+1 more) |
 
 **Statistics:**
-- Total Modules: 23
-- Total Classes: 14
+- Total Modules: 24
+- Total Classes: 15
 - Total Functions: 22
 
 ---
@@ -76,17 +77,17 @@ requires-python = ">=3.11"
 
 ### `requirements.txt`
 
-**SHA256:** `e6918e0f11a2667fc060416051ec4b9c08de10c7594161302a4a72acb55c4ffa`
+**SHA256:** `c9fc1c962a19b08e91def4b926188e1ab3c21b12a0c9fbf0fec1608a0c4206d1`
 
 ```text
 # HTTP & API
 requests>=2.31.0
 
 # Config & Serialization
-PyYAML>=6.0.1
+PyYAML>=6.0
 
 # Data Processing
-pandas>=2.1.0
+pandas>=2.0.0
 numpy>=1.24.0
 
 # Time & Date
@@ -94,6 +95,9 @@ python-dateutil>=2.8.2
 
 # Optional: Better Logging
 loguru>=0.7.0
+
+# Excel output
+openpyxl>=3.1.0
 
 ```
 
@@ -1568,6 +1572,307 @@ class SnapshotManager:
 
 ```
 
+### `scanner/pipeline/excel_output.py`
+
+**SHA256:** `ce8f419531a271208c4b16ff269df7361a7ab2c38a7d5196aac5d3c7bfb9227d`
+
+```python
+"""
+Excel Output Generation
+=======================
+
+Generates Excel workbooks with multiple sheets for daily scanner results.
+"""
+
+import logging
+from typing import Dict, List, Any
+from datetime import datetime
+from pathlib import Path
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.utils import get_column_letter
+
+logger = logging.getLogger(__name__)
+
+
+class ExcelReportGenerator:
+    """Generates Excel reports with multiple sheets."""
+    
+    def __init__(self, config: Dict[str, Any]):
+        """
+        Initialize Excel report generator.
+        
+        Args:
+            config: Config dict with 'output' section
+        """
+        # Handle both dict and ScannerConfig object
+        if hasattr(config, 'raw'):
+            output_config = config.raw.get('output', {})
+        else:
+            output_config = config.get('output', {})
+        
+        self.reports_dir = Path(output_config.get('reports_dir', 'reports'))
+        self.top_n = output_config.get('top_n_per_setup', 10)
+        
+        # Ensure directories exist
+        self.reports_dir.mkdir(parents=True, exist_ok=True)
+        
+        logger.info(f"Excel Report Generator initialized: reports_dir={self.reports_dir}")
+    
+    def generate_excel_report(
+        self,
+        reversal_results: List[Dict[str, Any]],
+        breakout_results: List[Dict[str, Any]],
+        pullback_results: List[Dict[str, Any]],
+        run_date: str,
+        metadata: Dict[str, Any] = None
+    ) -> Path:
+        """
+        Generate Excel workbook with 4 sheets.
+        
+        Args:
+            reversal_results: Scored reversal setups
+            breakout_results: Scored breakout setups
+            pullback_results: Scored pullback setups
+            run_date: Date string (YYYY-MM-DD)
+            metadata: Optional metadata (universe size, etc.)
+        
+        Returns:
+            Path to saved Excel file
+        """
+        logger.info(f"Generating Excel report for {run_date}")
+        
+        # Create workbook
+        wb = Workbook()
+        wb.remove(wb.active)  # Remove default sheet
+        
+        # Sheet 1: Summary
+        self._create_summary_sheet(
+            wb, run_date, 
+            len(reversal_results), 
+            len(breakout_results), 
+            len(pullback_results),
+            metadata
+        )
+        
+        # Sheet 2: Reversal Setups
+        self._create_setup_sheet(
+            wb, "Reversal Setups", 
+            reversal_results[:self.top_n],
+            ['Drawdown', 'Base', 'Reclaim', 'Volume']
+        )
+        
+        # Sheet 3: Breakout Setups
+        self._create_setup_sheet(
+            wb, "Breakout Setups",
+            breakout_results[:self.top_n],
+            ['Breakout', 'Volume', 'Trend', 'Momentum']
+        )
+        
+        # Sheet 4: Pullback Setups
+        self._create_setup_sheet(
+            wb, "Pullback Setups",
+            pullback_results[:self.top_n],
+            ['Trend', 'Pullback', 'Rebound', 'Volume']
+        )
+        
+        # Save
+        excel_path = self.reports_dir / f"{run_date}.xlsx"
+        wb.save(excel_path)
+        logger.info(f"Excel report saved: {excel_path}")
+        
+        return excel_path
+    
+    def _create_summary_sheet(
+        self,
+        wb: Workbook,
+        run_date: str,
+        reversal_count: int,
+        breakout_count: int,
+        pullback_count: int,
+        metadata: Dict[str, Any] = None
+    ):
+        """Create Summary sheet with run statistics."""
+        ws = wb.create_sheet("Summary", 0)
+        
+        # Header
+        ws['A1'] = 'Metric'
+        ws['B1'] = 'Value'
+        
+        # Style header
+        for cell in ['A1', 'B1']:
+            ws[cell].font = Font(bold=True, size=12)
+            ws[cell].fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+            ws[cell].font = Font(bold=True, size=12, color="FFFFFF")
+            ws[cell].alignment = Alignment(horizontal='center')
+        
+        # Data rows
+        row = 2
+        ws[f'A{row}'] = 'Run Date'
+        ws[f'B{row}'] = run_date
+        row += 1
+        
+        ws[f'A{row}'] = 'Generated At'
+        ws[f'B{row}'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
+        row += 1
+        
+        # Add metadata if available
+        if metadata:
+            ws[f'A{row}'] = 'Total Symbols Scanned'
+            ws[f'B{row}'] = metadata.get('universe_size', 'N/A')
+            row += 1
+            
+            ws[f'A{row}'] = 'Symbols Filtered (MidCaps)'
+            ws[f'B{row}'] = metadata.get('filtered_size', 'N/A')
+            row += 1
+            
+            ws[f'A{row}'] = 'Symbols in Shortlist'
+            ws[f'B{row}'] = metadata.get('shortlist_size', 'N/A')
+            row += 1
+        
+        ws[f'A{row}'] = 'Reversal Setups Found'
+        ws[f'B{row}'] = reversal_count
+        row += 1
+        
+        ws[f'A{row}'] = 'Breakout Setups Found'
+        ws[f'B{row}'] = breakout_count
+        row += 1
+        
+        ws[f'A{row}'] = 'Pullback Setups Found'
+        ws[f'B{row}'] = pullback_count
+        row += 1
+        
+        # Column widths
+        ws.column_dimensions['A'].width = 30
+        ws.column_dimensions['B'].width = 20
+    
+    def _create_setup_sheet(
+        self,
+        wb: Workbook,
+        sheet_name: str,
+        results: List[Dict[str, Any]],
+        component_names: List[str]
+    ):
+        """
+        Create a setup sheet (Reversal/Breakout/Pullback).
+        
+        Args:
+            wb: Workbook object
+            sheet_name: Name of the sheet
+            results: List of scored setups
+            component_names: List of component score names
+        """
+        ws = wb.create_sheet(sheet_name)
+        
+        # Headers
+        headers = [
+            'Rank', 'Symbol', 'Name', 'Price (USDT)', 
+            'Market Cap', '24h Volume', 'Score'
+        ] + component_names + ['Flags']
+        
+        # Write headers
+        for col_idx, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_idx, value=header)
+            cell.font = Font(bold=True, size=11)
+            cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+            cell.font = Font(bold=True, size=11, color="FFFFFF")
+            cell.alignment = Alignment(horizontal='center')
+        
+        # Data rows
+        for rank, result in enumerate(results, 1):
+            row_idx = rank + 1
+            
+            # Basic info
+            ws.cell(row=row_idx, column=1, value=rank)
+            ws.cell(row=row_idx, column=2, value=result.get('symbol', 'N/A'))
+            ws.cell(row=row_idx, column=3, value=result.get('coin_name', 'Unknown'))
+            
+            # Price
+            price = result.get('price_usdt')
+            if price is not None:
+                ws.cell(row=row_idx, column=4, value=f"${price:.2f}")
+            else:
+                ws.cell(row=row_idx, column=4, value='N/A')
+            
+            # Market Cap (abbreviated)
+            market_cap = result.get('market_cap')
+            if market_cap:
+                ws.cell(row=row_idx, column=5, value=self._format_large_number(market_cap))
+            else:
+                ws.cell(row=row_idx, column=5, value='N/A')
+            
+            # 24h Volume (abbreviated)
+            volume = result.get('quote_volume_24h')
+            if volume:
+                ws.cell(row=row_idx, column=6, value=self._format_large_number(volume))
+            else:
+                ws.cell(row=row_idx, column=6, value='N/A')
+            
+            # Score
+            ws.cell(row=row_idx, column=7, value=result.get('score', 0))
+            
+            # Component scores
+            components = result.get('components', {})
+            for col_offset, comp_name in enumerate(component_names):
+                comp_key = comp_name.lower()
+                comp_value = components.get(comp_key, 0)
+                ws.cell(row=row_idx, column=8 + col_offset, value=comp_value)
+            
+            # Flags
+            flags = result.get('flags', [])
+            if isinstance(flags, list):
+                flag_str = ', '.join(flags) if flags else ''
+            elif isinstance(flags, dict):
+                flag_str = ', '.join([k for k, v in flags.items() if v])
+            else:
+                flag_str = ''
+            ws.cell(row=row_idx, column=8 + len(component_names), value=flag_str)
+        
+        # Freeze top row
+        ws.freeze_panes = 'A2'
+        
+        # Autofilter
+        ws.auto_filter.ref = ws.dimensions
+        
+        # Column widths
+        ws.column_dimensions['A'].width = 6   # Rank
+        ws.column_dimensions['B'].width = 14  # Symbol
+        ws.column_dimensions['C'].width = 20  # Name
+        ws.column_dimensions['D'].width = 13  # Price
+        ws.column_dimensions['E'].width = 13  # Market Cap
+        ws.column_dimensions['F'].width = 13  # Volume
+        ws.column_dimensions['G'].width = 8   # Score
+        
+        # Component columns
+        for i in range(len(component_names)):
+            col_letter = get_column_letter(8 + i)
+            ws.column_dimensions[col_letter].width = 12
+        
+        # Flags column
+        flags_col = get_column_letter(8 + len(component_names))
+        ws.column_dimensions[flags_col].width = 25
+    
+    def _format_large_number(self, num: float) -> str:
+        """
+        Format large numbers with M/B suffix.
+        
+        Args:
+            num: Number to format
+        
+        Returns:
+            Formatted string (e.g., "$1.23M", "$4.56B")
+        """
+        if num >= 1_000_000_000:
+            return f"${num / 1_000_000_000:.2f}B"
+        elif num >= 1_000_000:
+            return f"${num / 1_000_000:.2f}M"
+        elif num >= 1_000:
+            return f"${num / 1_000:.2f}K"
+        else:
+            return f"${num:.2f}"
+
+```
+
 ### `scanner/pipeline/features.py`
 
 **SHA256:** `6ca81bd282734a31268ada96b007fc89d06e1a7611aa02393270960a8696664c`
@@ -1895,14 +2200,14 @@ class FeatureEngine:
 
 ### `scanner/pipeline/output.py`
 
-**SHA256:** `3c2547095ab669b1670dcdd6e3338b5672a6d4f5c9da619fc9662e90a361bfdc`
+**SHA256:** `4ea1173b8e7637fdeaa0055d28735519e2aae34b2ea9feadd8672ca761257ebe`
 
 ```python
 """
 Output & Report Generation
 ===========================
 
-Generates human-readable (Markdown) and machine-readable (JSON) reports
+Generates human-readable (Markdown), machine-readable (JSON), and Excel reports
 from scored results.
 """
 
@@ -1981,7 +2286,7 @@ class ReportGenerator:
         # Reversal Setups (Priority)
         lines.append("## 🔄 Top Reversal Setups")
         lines.append("")
-        lines.append("*Downtrend → Base → Reclaim (like Humanity Protocol)*")
+        lines.append("*Downtrend → Base → Reclaim*")
         lines.append("")
         
         if reversal_results:
@@ -2013,7 +2318,7 @@ class ReportGenerator:
         lines.append("")
         
         # Pullback Setups
-        lines.append("## 🔽 Top Pullback Setups")
+        lines.append("## 📽 Top Pullback Setups")
         lines.append("")
         lines.append("*Trend continuation after retracement*")
         lines.append("")
@@ -2040,36 +2345,65 @@ class ReportGenerator:
         
         return "\n".join(lines)
     
-    def _format_setup_entry(self, rank: int, entry: Dict[str, Any]) -> List[str]:
-        """Format a single setup entry for markdown."""
+    def _format_setup_entry(self, rank: int, data: dict) -> List[str]:
+        """
+        Format a single setup entry for markdown output.
+        
+        Args:
+            rank: Position in ranking (1-based)
+            data: Setup data dict containing symbol, score, components, etc.
+        
+        Returns:
+            List of markdown lines
+        """
         lines = []
         
-        symbol = entry['symbol']
-        score = entry['score']
-        components = entry['components']
-        flags = entry.get('flags', [])
-        reasons = entry.get('reasons', [])
+        # Extract data
+        symbol = data.get('symbol', 'UNKNOWN')
+        coin_name = data.get('coin_name', 'Unknown')
+        score = data.get('score', 0)
+        price = data.get('price_usdt')
         
-        # Header
-        flag_str = f" ⚠️ {', '.join(flags)}" if flags else ""
-        lines.append(f"### {rank}. {symbol} - Score: {score:.1f}{flag_str}")
+        # Header with rank, symbol, name, and score
+        lines.append(f"### {rank}. {symbol} ({coin_name}) - Score: {score:.1f}")
         lines.append("")
+        
+        # Price
+        if price is not None:
+            lines.append(f"**Price:** ${price:.6f} USDT")
+            lines.append("")
         
         # Components
-        lines.append("**Components:**")
-        for comp_name, comp_score in components.items():
-            lines.append(f"- {comp_name.capitalize()}: {comp_score:.1f}")
-        lines.append("")
+        components = data.get('components', {})
+        if components:
+            lines.append("**Components:**")
+            for comp_name, comp_value in components.items():
+                lines.append(f"- {comp_name.replace('_', ' ').capitalize()}: {comp_value:.1f}")
+            lines.append("")
         
-        # Reasons
-        if reasons:
+        # Analysis
+        analysis = data.get('analysis', '')
+        if analysis:
             lines.append("**Analysis:**")
-            for reason in reasons:
-                lines.append(f"- {reason}")
+            lines.append(analysis)
+            lines.append("")
+        
+        # Flags - handle both dict and list formats
+        flags = data.get('flags', {})
+        flag_list = []
+        
+        if isinstance(flags, dict):
+            flag_list = [k for k, v in flags.items() if v]
+        elif isinstance(flags, list):
+            flag_list = flags
+        
+        if flag_list:
+            flag_str = ', '.join(flag_list)
+            lines.append(f"**⚠️ Flags:** {flag_str}")
             lines.append("")
         
         return lines
-    
+        
     def generate_json_report(
         self,
         reversal_results: List[Dict[str, Any]],
@@ -2124,7 +2458,7 @@ class ReportGenerator:
         metadata: Dict[str, Any] = None
     ) -> Dict[str, Path]:
         """
-        Generate and save both Markdown and JSON reports.
+        Generate and save Markdown, JSON, and Excel reports.
         
         Args:
             reversal_results: Scored reversal setups
@@ -2134,37 +2468,63 @@ class ReportGenerator:
             metadata: Optional metadata
         
         Returns:
-            Dict with paths: {'markdown': Path, 'json': Path}
+            Dict with paths: {'markdown': Path, 'json': Path, 'excel': Path}
         """
         logger.info(f"Generating reports for {run_date}")
         
-        # Generate reports
+        # Generate Markdown
         md_content = self.generate_markdown_report(
             reversal_results, breakout_results, pullback_results, run_date
         )
         
+        # Generate JSON
         json_content = self.generate_json_report(
             reversal_results, breakout_results, pullback_results, run_date, metadata
         )
         
-        # Save files
+        # Save Markdown
         md_path = self.reports_dir / f"{run_date}.md"
-        json_path = self.reports_dir / f"{run_date}.json"
-        
-        # Write Markdown
         with open(md_path, 'w', encoding='utf-8') as f:
             f.write(md_content)
         logger.info(f"Markdown report saved: {md_path}")
         
-        # Write JSON
+        # Save JSON
+        json_path = self.reports_dir / f"{run_date}.json"
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(json_content, f, indent=2, ensure_ascii=False)
         logger.info(f"JSON report saved: {json_path}")
         
-        return {
+        # Generate Excel
+        try:
+            from .excel_output import ExcelReportGenerator
+            # Reconstruct config dict for Excel generator
+            excel_config = {
+                'output': {
+                    'reports_dir': str(self.reports_dir),
+                    'top_n_per_setup': self.top_n
+                }
+            }
+            excel_gen = ExcelReportGenerator(excel_config)
+            excel_path = excel_gen.generate_excel_report(
+                reversal_results, breakout_results, pullback_results, run_date, metadata
+            )
+            logger.info(f"Excel report saved: {excel_path}")
+        except ImportError:
+            logger.warning("openpyxl not installed - Excel export skipped")
+            excel_path = None
+        except Exception as e:
+            logger.error(f"Excel generation failed: {e}")
+            excel_path = None
+        
+        result = {
             'markdown': md_path,
             'json': json_path
         }
+        
+        if excel_path:
+            result['excel'] = excel_path
+        
+        return result
 
 ```
 
@@ -2628,7 +2988,7 @@ class OHLCVFetcher:
 
 ### `scanner/pipeline/__init__.py`
 
-**SHA256:** `21e6f825bd4ab9b3c2f8e0b2d050499c25768633a451bb9cc5bee27958dd5a3a`
+**SHA256:** `74d98b032db4be97b60f26a9f882197e79dca484540877cd510795994650a52a`
 
 ```python
 """
@@ -2669,9 +3029,10 @@ def run_pipeline(config: ScannerConfig) -> None:
     5. Run cheap pass (shortlist)
     6. Fetch OHLCV for shortlist
     7. Compute features (1d + 4h)
-    8. Compute scores (breakout / pullback / reversal)
-    9. Write reports (Markdown + JSON)
-    10. Write snapshot for backtests
+    8. Enrich features with price, name, market cap, and volume
+    9. Compute scores (breakout / pullback / reversal)
+    10. Write reports (Markdown + JSON + Excel)
+    11. Write snapshot for backtests
     """
     run_mode = config.run_mode
     run_date = datetime.utcnow().strftime('%Y-%m-%d')
@@ -2690,7 +3051,7 @@ def run_pipeline(config: ScannerConfig) -> None:
     logger.info("✓ Clients initialized")
     
     # Step 1: Fetch universe (MEXC Spot USDT)
-    logger.info("\n[1/10] Fetching MEXC universe...")
+    logger.info("\n[1/11] Fetching MEXC universe...")
     universe = mexc.get_spot_usdt_symbols(use_cache=use_cache)
     logger.info(f"✓ Universe: {len(universe)} USDT pairs")
     
@@ -2701,7 +3062,7 @@ def run_pipeline(config: ScannerConfig) -> None:
     logger.info(f"  ✓ Tickers: {len(ticker_map)} symbols")
     
     # Step 2 & 3: Fetch market cap + Run mapping layer
-    logger.info("\n[2-3/10] Fetching market cap & mapping...")
+    logger.info("\n[2-3/11] Fetching market cap & mapping...")
     cmc_listings = cmc.get_listings(use_cache=use_cache)
     cmc_symbol_map = cmc.build_symbol_map(cmc_listings)
     logger.info(f"  ✓ CMC: {len(cmc_symbol_map)} symbols")
@@ -2728,34 +3089,62 @@ def run_pipeline(config: ScannerConfig) -> None:
         })
     
     # Step 4: Apply hard filters
-    logger.info("\n[4/10] Applying universe filters...")
+    logger.info("\n[4/11] Applying universe filters...")
     filters = UniverseFilters(config.raw)
     filtered = filters.apply_all(symbols_with_data)
     logger.info(f"✓ Filtered: {len(filtered)} symbols")
     
     # Step 5: Run cheap pass (shortlist)
-    logger.info("\n[5/10] Creating shortlist...")
+    logger.info("\n[5/11] Creating shortlist...")
     selector = ShortlistSelector(config.raw)
     shortlist = selector.select(filtered)
     logger.info(f"✓ Shortlist: {len(shortlist)} symbols")
     
     # Step 6: Fetch OHLCV for shortlist
-    logger.info("\n[6/10] Fetching OHLCV data...")
+    logger.info("\n[6/11] Fetching OHLCV data...")
     ohlcv_fetcher = OHLCVFetcher(mexc, config.raw)
     ohlcv_data = ohlcv_fetcher.fetch_all(shortlist)
     logger.info(f"✓ OHLCV: {len(ohlcv_data)} symbols with complete data")
     
     # Step 7: Compute features (1d + 4h)
-    logger.info("\n[7/10] Computing features...")
+    logger.info("\n[7/11] Computing features...")
     feature_engine = FeatureEngine(config.raw)
     features = feature_engine.compute_all(ohlcv_data)
     logger.info(f"✓ Features: {len(features)} symbols")
+
+    # Step 8: Enrich features with price, coin name, market cap, and volume
+    logger.info("\n[8/11] Enriching features with price, name, market cap, and volume...")
+    for symbol in features.keys():
+        # Add current price from tickers
+        ticker = ticker_map.get(symbol)
+        if ticker:
+            features[symbol]['price_usdt'] = float(ticker.get('lastPrice', 0))
+        else:
+            features[symbol]['price_usdt'] = None
     
-    # Prepare volume map for scoring
+        # Add coin name from CMC
+        mapping = mapper.map_symbol(symbol, cmc_symbol_map)
+        if mapping.mapped and mapping.cmc_data:
+            features[symbol]['coin_name'] = mapping.cmc_data.get('name', 'Unknown')
+        else:
+            features[symbol]['coin_name'] = 'Unknown'
+        
+        # Add market cap and volume from shortlist data
+        shortlist_entry = next((s for s in shortlist if s['symbol'] == symbol), None)
+        if shortlist_entry:
+            features[symbol]['market_cap'] = shortlist_entry.get('market_cap')
+            features[symbol]['quote_volume_24h'] = shortlist_entry.get('quote_volume_24h')
+        else:
+            features[symbol]['market_cap'] = None
+            features[symbol]['quote_volume_24h'] = None
+
+    logger.info(f"✓ Enriched {len(features)} symbols with price, name, market cap, and volume")
+    
+    # Prepare volume map for scoring (backwards compatibility)
     volume_map = {s['symbol']: s['quote_volume_24h'] for s in shortlist}
     
-    # Step 8: Compute scores (breakout / pullback / reversal)
-    logger.info("\n[8/10] Scoring setups...")
+    # Step 9: Compute scores (breakout / pullback / reversal)
+    logger.info("\n[9/11] Scoring setups...")
     
     logger.info("  Scoring Reversals...")
     reversal_results = score_reversals(features, volume_map, config.raw)
@@ -2769,8 +3158,8 @@ def run_pipeline(config: ScannerConfig) -> None:
     pullback_results = score_pullbacks(features, volume_map, config.raw)
     logger.info(f"  ✓ Pullbacks: {len(pullback_results)} scored")
     
-    # Step 9: Write reports (Markdown + JSON)
-    logger.info("\n[9/10] Generating reports...")
+    # Step 10: Write reports (Markdown + JSON + Excel)
+    logger.info("\n[10/11] Generating reports...")
     report_gen = ReportGenerator(config.raw)
     report_paths = report_gen.save_reports(
         reversal_results,
@@ -2780,9 +3169,11 @@ def run_pipeline(config: ScannerConfig) -> None:
     )
     logger.info(f"✓ Markdown: {report_paths['markdown']}")
     logger.info(f"✓ JSON: {report_paths['json']}")
+    if 'excel' in report_paths:
+        logger.info(f"✓ Excel: {report_paths['excel']}")
     
-    # Step 10: Write snapshot for backtests
-    logger.info("\n[10/10] Creating snapshot...")
+    # Step 11: Write snapshot for backtests
+    logger.info("\n[11/11] Creating snapshot...")
     snapshot_mgr = SnapshotManager(config.raw)
     snapshot_path = snapshot_mgr.create_snapshot(
         run_date=run_date,
@@ -2812,6 +3203,8 @@ def run_pipeline(config: ScannerConfig) -> None:
     logger.info(f"  Pullbacks: {len(pullback_results)}")
     logger.info(f"\nOutputs:")
     logger.info(f"  Report: {report_paths['markdown']}")
+    if 'excel' in report_paths:
+        logger.info(f"  Excel: {report_paths['excel']}")
     logger.info(f"  Snapshot: {snapshot_path}")
     logger.info("=" * 80)
 
@@ -3672,7 +4065,7 @@ class MEXCClient:
 
 ### `scanner/pipeline/scoring/pullback.py`
 
-**SHA256:** `eb0f7f3854b9db26abf88ab0f5050d98fc5cf2fdb67d002ada1f6992740fd96a`
+**SHA256:** `c44ab6a578156880267b5d91f552c2ecb5a9c7d44a5ea0fe0ec2f1bc14e533bb`
 
 ```python
 """
@@ -4008,6 +4401,10 @@ def score_pullbacks(
             
             results.append({
                 'symbol': symbol,
+                'price_usdt': features.get('price_usdt'),
+                'coin_name': features.get('coin_name'),
+                'market_cap': features.get('market_cap'),
+                'quote_volume_24h': features.get('quote_volume_24h'),
                 'score': score_result['score'],
                 'components': score_result['components'],
                 'penalties': score_result['penalties'],
@@ -4030,7 +4427,7 @@ def score_pullbacks(
 
 ### `scanner/pipeline/scoring/breakout.py`
 
-**SHA256:** `77ea425ca0a0b50c9daa1613ca4b8b3c279c4d1425811a9a4bced9ddd3437e12`
+**SHA256:** `41bf484e393f7d4583ef333151ae1bf1a08c07e55c44b455fa99b79a892288e0`
 
 ```python
 """
@@ -4334,6 +4731,10 @@ def score_breakouts(
             
             results.append({
                 'symbol': symbol,
+                'price_usdt': features.get('price_usdt'),
+                'coin_name': features.get('coin_name'),
+                'market_cap': features.get('market_cap'),
+                'quote_volume_24h': features.get('quote_volume_24h'),
                 'score': score_result['score'],
                 'components': score_result['components'],
                 'penalties': score_result['penalties'],
@@ -4356,14 +4757,14 @@ def score_breakouts(
 
 ### `scanner/pipeline/scoring/reversal.py`
 
-**SHA256:** `b5dca2b5ce0478ed77e32594669a93b4ac12fa9e6c682350c72fc94739b16994`
+**SHA256:** `5cdf49fc3bda91babf545b14a5965fd2b889c1d042b429ad213579b63bebe898`
 
 ```python
 """
 Reversal Setup Scoring
 ======================
 
-Identifies downtrend → base → reclaim setups (like Humanity Protocol example).
+Identifies downtrend → base → reclaim setups.
 
 Scoring Components:
 1. Drawdown Context (30%) - Deep enough pullback from ATH
@@ -4691,6 +5092,10 @@ def score_reversals(
             
             results.append({
                 'symbol': symbol,
+                'price_usdt': features.get('price_usdt'),
+                'coin_name': features.get('coin_name'),
+                'market_cap': features.get('market_cap'),
+                'quote_volume_24h': features.get('quote_volume_24h'),
                 'score': score_result['score'],
                 'components': score_result['components'],
                 'penalties': score_result['penalties'],
@@ -6135,4 +6540,4 @@ v1 provides the structural foundation.
 
 ---
 
-_Generated by GitHub Actions • 2026-01-17 18:43 UTC_
+_Generated by GitHub Actions • 2026-01-17 20:37 UTC_
