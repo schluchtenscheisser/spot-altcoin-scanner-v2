@@ -64,6 +64,17 @@ pytest
 All specs and dev guides live in /docs.
 
 
+## Developer Information
+
+**New to this project?** Read these docs in order:
+1. `README.md` (this file) - Overview
+2. `docs/dev_guide.md` - How we work with AI
+3. `docs/project_phases.md` - Development roadmap
+4. `snapshots/gpt/gpt_snapshot_YYYY-MM-DD.md` - Current status
+
+**AI assistants:** Start with `dev_guide.md` to understand workflow.
+
+
 ## Development Status
 
 **Last Updated:** 2026-01-17
