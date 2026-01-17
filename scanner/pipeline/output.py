@@ -81,7 +81,7 @@ class ReportGenerator:
         # Reversal Setups (Priority)
         lines.append("## 🔄 Top Reversal Setups")
         lines.append("")
-        lines.append("*Downtrend → Base → Reclaim (like Humanity Protocol)*")
+        lines.append("*Downtrend → Base → Reclaim*")
         lines.append("")
         
         if reversal_results:
@@ -113,7 +113,7 @@ class ReportGenerator:
         lines.append("")
         
         # Pullback Setups
-        lines.append("## 🔽 Top Pullback Setups")
+        lines.append("## 📽 Top Pullback Setups")
         lines.append("")
         lines.append("*Trend continuation after retracement*")
         lines.append("")
@@ -140,19 +140,33 @@ class ReportGenerator:
         
         return "\n".join(lines)
     
-    def _format_setup_entry(self, rank: int, symbol: str, data: dict) -> str:
-        """Format a single setup entry for markdown output."""
+    def _format_setup_entry(self, rank: int, data: dict) -> List[str]:
+        """
+        Format a single setup entry for markdown output.
+        
+        Args:
+            rank: Position in ranking (1-based)
+            data: Setup data dict containing symbol, score, components, etc.
+        
+        Returns:
+            List of markdown lines
+        """
         lines = []
         
-        # Header with rank, symbol, name, and score
+        # Extract data
+        symbol = data.get('symbol', 'UNKNOWN')
         coin_name = data.get('coin_name', 'Unknown')
         score = data.get('score', 0)
         price = data.get('price_usdt')
         
+        # Header with rank, symbol, name, and score
         lines.append(f"### {rank}. {symbol} ({coin_name}) - Score: {score:.1f}")
+        lines.append("")
         
+        # Price
         if price is not None:
             lines.append(f"**Price:** ${price:.6f} USDT")
+            lines.append("")
         
         # Components
         components = data.get('components', {})
@@ -160,19 +174,23 @@ class ReportGenerator:
             lines.append("**Components:**")
             for comp_name, comp_value in components.items():
                 lines.append(f"- {comp_name.replace('_', ' ').capitalize()}: {comp_value:.1f}")
+            lines.append("")
         
         # Analysis
         analysis = data.get('analysis', '')
         if analysis:
-            lines.append(f"\n**Analysis:**\n{analysis}")
+            lines.append("**Analysis:**")
+            lines.append(analysis)
+            lines.append("")
         
         # Flags
         flags = data.get('flags', {})
         if any(flags.values()):
             flag_str = ', '.join([k for k, v in flags.items() if v])
-            lines.append(f"\n**Flags:** {flag_str}")
+            lines.append(f"**⚠️ Flags:** {flag_str}")
+            lines.append("")
         
-        return '\n'.join(lines)
+        return lines
         
     def generate_json_report(
         self,
