@@ -9,6 +9,16 @@ on:
       - 'docs/**/*.md'
       - 'config/**/*'
   workflow_dispatch:
+    inputs:
+      snapshot_type:
+        description: 'Snapshot type'
+        required: false
+        default: 'automatic'
+        type: choice
+        options:
+          - automatic
+          - manual
+          - milestone
 
 permissions:
   contents: write
@@ -31,74 +41,193 @@ jobs:
       - name: Create snapshot directory
         run: mkdir -p snapshots/gpt
       
+      - name: Get snapshot metadata
+        id: meta
+        run: |
+          echo "date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
+          echo "time=$(date -u +'%H:%M UTC')" >> $GITHUB_OUTPUT
+          echo "timestamp=$(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
+      
       - name: Get recent commits
         id: commits
         run: |
           git log -5 --pretty=format:"- %s (%h)" --no-merges > /tmp/commits.txt
-          cat /tmp/commits.txt
       
       - name: Get changed files
         id: files
         run: |
           git diff-tree --no-commit-id --name-only -r HEAD | head -20 > /tmp/files.txt
-          cat /tmp/files.txt
       
-      - name: Generate snapshot
+      - name: Count modules and classes
+        id: stats
         run: |
-          SNAPSHOT_DATE=$(date +%Y-%m-%d)
-          SNAPSHOT_TIME=$(date -u +"%H:%M UTC")
-          
-          cat > snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md << 'SNAPSHOT_EOF'
-          # GPT Snapshot - $(date +%Y-%m-%d)
+          MODULE_COUNT=$(find scanner -name "*.py" | wc -l)
+          echo "modules=$MODULE_COUNT" >> $GITHUB_OUTPUT
+      
+      - name: Detect phase
+        id: phase
+        run: |
+          if grep -q "backtest" /tmp/files.txt 2>/dev/null; then
+            echo "phase=7 (Backtesting)" >> $GITHUB_OUTPUT
+            echo "focus=Backtesting implementation" >> $GITHUB_OUTPUT
+          else
+            echo "phase=6 Complete (MVP)" >> $GITHUB_OUTPUT
+            echo "focus=MVP maintenance and monitoring" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Generate comprehensive snapshot
+        env:
+          SNAPSHOT_DATE: ${{ steps.meta.outputs.date }}
+          SNAPSHOT_TIME: ${{ steps.meta.outputs.time }}
+          SNAPSHOT_TIMESTAMP: ${{ steps.meta.outputs.timestamp }}
+          SNAPSHOT_TYPE: ${{ github.event.inputs.snapshot_type || 'automatic' }}
+          MODULE_COUNT: ${{ steps.stats.outputs.modules }}
+          PHASE: ${{ steps.phase.outputs.phase }}
+          FOCUS: ${{ steps.phase.outputs.focus }}
+        run: |
+          cat > snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md << 'SNAPSHOT_HEADER'
+          # GPT Snapshot - SNAPSHOT_DATE_PLACEHOLDER
           
           ## Status
-          **Type:** Automatic
-          **Generated:** $(date -u +"%H:%M UTC")
-          **Trigger:** Push to main
+          **Type:** SNAPSHOT_TYPE_PLACEHOLDER  
+          **Generated:** SNAPSHOT_TIME_PLACEHOLDER  
+          **Trigger:** TRIGGER_PLACEHOLDER
+          **Session:** Automatic GitHub Actions workflow
           
           ---
           
           ## Recent Changes
           
           ### Last 5 Commits
-          SNAPSHOT_EOF
+          SNAPSHOT_HEADER
           
+          # Replace placeholders
+          sed -i "s/SNAPSHOT_DATE_PLACEHOLDER/${SNAPSHOT_DATE}/g" snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md
+          sed -i "s/SNAPSHOT_TIME_PLACEHOLDER/${SNAPSHOT_TIME}/g" snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md
+          sed -i "s/SNAPSHOT_TYPE_PLACEHOLDER/${SNAPSHOT_TYPE^}/g" snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md
+          
+          if [ "$SNAPSHOT_TYPE" == "manual" ]; then
+            sed -i "s/TRIGGER_PLACEHOLDER/Manual workflow dispatch/g" snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md
+          else
+            sed -i "s/TRIGGER_PLACEHOLDER/Automatic (push to main)/g" snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md
+          fi
+          
+          # Append commits
           cat /tmp/commits.txt >> snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md
           
-          cat >> snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md << 'SNAPSHOT_EOF'
+          # Continue with rest of snapshot
+          cat >> snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md << 'SNAPSHOT_BODY'
           
           ### Changed Files
           ```
-          SNAPSHOT_EOF
+          SNAPSHOT_BODY
           
           cat /tmp/files.txt >> snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md
           
-          cat >> snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md << 'SNAPSHOT_EOF'
-          ```
+          cat >> snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md << SNAPSHOT_CONTENT
+          \`\`\`
           
           ---
           
           ## Current Project State
           
           ### Development Status
-          - **Phase:** 6 Complete (MVP)
-          - **Code Map:** docs/code_map.md
+          - **Phase:** ${PHASE}
+          - **MVP Status:** Complete ✅
+          - **Code Map:** \`docs/code_map.md\` (auto-updated)
           - **Documentation:** Up to date
+          - **Total Modules:** ${MODULE_COUNT} Python files
           
           ### Key Metrics
-          - Universe: 1837 MEXC USDT pairs
-          - Mapping Success: 88.4% (1624/1837)
-          - Pipeline Steps: 10
-          - Scoring Modules: 3 (Reversal, Breakout, Pullback)
+          - **Universe:** 1837 MEXC USDT pairs
+          - **Mapping Success:** 88.4% (1624/1837)
+          - **Pipeline Steps:** 10
+          - **Scoring Modules:** 3 (Reversal, Breakout, Pullback)
+          - **Execution Time:** ~4-5 minutes (with cache)
+          
+          ### Architecture Overview
+          - **Entry Point:** \`scanner/main.py\`
+          - **Pipeline:** \`scanner/pipeline/__init__.py\` (10-step orchestration)
+          - **API Clients:** MEXC (free) + CoinMarketCap (free tier)
+          - **Caching:** File-based (\`data/raw/YYYY-MM-DD/\`)
+          - **Reports:** Markdown + JSON (\`reports/\`)
+          - **Snapshots:** Runtime data (\`snapshots/runtime/\`)
+          
+          ---
+          
+          ## Completed Phases (MVP)
+          
+          ### ✅ Phase 1: Foundation
+          - Utils: logging, time, I/O
+          - Config: YAML loading + validation
+          
+          ### ✅ Phase 2: Data Clients
+          - MEXC API client (1837 pairs)
+          - CoinMarketCap client (5000 listings)
+          
+          ### ✅ Phase 3: Mapping Layer
+          - Symbol mapper (88.4% success)
+          - Collision detection
+          - Manual overrides support
+          
+          ### ✅ Phase 4: Pipeline Components
+          - Filters (MidCap 100M-3B)
+          - Shortlist (top 100 by volume)
+          - OHLCV fetcher (1d + 4h)
+          - Feature engine (EMAs, ATR, returns, etc.)
+          
+          ### ✅ Phase 5: Scoring Modules
+          - Reversal (Priority: Downtrend → Base → Reclaim)
+          - Breakout (Range break + volume)
+          - Pullback (Trend continuation)
+          
+          ### ✅ Phase 6: Output & Automation
+          - Report generator (Markdown + JSON)
+          - Snapshot manager (backtesting data)
+          - GitHub Actions (daily 6:00 AM UTC)
+          
+          ---
+          
+          ## Notable Changes This Session
+          SNAPSHOT_CONTENT
+          
+          # Detect change types
+          if grep -q "\.py$" /tmp/files.txt 2>/dev/null; then
+            echo "" >> snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md
+            echo "### 🐍 Code Changes" >> snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md
+            grep "\.py$" /tmp/files.txt | while read f; do echo "- \`$f\`" >> snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md; done
+          fi
+          
+          if grep -q "\.md$" /tmp/files.txt 2>/dev/null; then
+            echo "" >> snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md
+            echo "### 📝 Documentation Changes" >> snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md
+            grep "\.md$" /tmp/files.txt | while read f; do echo "- \`$f\`" >> snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md; done
+          fi
+          
+          if grep -q "config" /tmp/files.txt 2>/dev/null; then
+            echo "" >> snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md
+            echo "### ⚙️ Configuration Changes" >> snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md
+            grep "config" /tmp/files.txt | while read f; do echo "- \`$f\`" >> snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md; done
+          fi
+          
+          if grep -q "\.yml$\|\.yaml$" /tmp/files.txt 2>/dev/null; then
+            echo "" >> snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md
+            echo "### 🔧 Workflow Changes" >> snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md
+            grep "\.yml$\|\.yaml$" /tmp/files.txt | while read f; do echo "- \`$f\`" >> snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md; done
+          fi
+          
+          # Final sections
+          cat >> snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md << SNAPSHOT_FOOTER
           
           ---
           
           ## Open Tasks
           
           - [ ] Review changes in latest commit
-          - [ ] Run scanner to validate: `python -m scanner.main --mode fast`
-          - [ ] Check logs: `cat logs/scanner_$(date +%Y-%m-%d).log`
+          - [ ] Run scanner to validate: \`python -m scanner.main --mode fast\`
+          - [ ] Check logs: \`cat logs/scanner_\$(date +%Y-%m-%d).log\`
           - [ ] Update documentation if needed
+          - [ ] Monitor GitHub Actions runs
           
           ---
           
@@ -106,37 +235,103 @@ jobs:
           
           ### Context to Remember
           1. **Last Changes:** See commits above
-          2. **Current Focus:** MVP maintenance and monitoring
-          3. **Code Map Location:** `docs/code_map.md`
-          4. **Specifications:** `docs/spec.md`
+          2. **Current Focus:** ${FOCUS}
+          3. **Code Map Location:** \`docs/code_map.md\` (auto-updated)
+          4. **Specifications:** \`docs/spec.md\` (authoritative)
+          5. **Latest Snapshot:** This file
           
           ### Before Making Changes
-          1. Read `docs/code_map.md` to understand structure
-          2. Read `docs/dev_guide.md` for workflow
-          3. Check latest snapshot (this file)
-          4. Review `docs/spec.md` for constraints
+          1. ✅ Read \`docs/code_map.md\` - Complete structural overview
+          2. ✅ Read \`docs/dev_guide.md\` - Development workflow
+          3. ✅ Check latest snapshot (this file) - Recent changes
+          4. ✅ Review \`docs/spec.md\` - Design constraints
+          5. ✅ Check \`README.md\` - User-facing docs
           
           ### Quick Commands
-          ```bash
-          # Run scanner
+          \`\`\`bash
+          # Run scanner (fast mode with cache)
           python -m scanner.main --mode fast
           
+          # Run scanner (standard mode, fresh API calls)
+          python -m scanner.main --mode standard
+          
           # View latest report
-          cat reports/$(date +%Y-%m-%d).md
+          cat reports/\$(date +%Y-%m-%d).md
           
           # Check logs
-          tail -50 logs/scanner_$(date +%Y-%m-%d).log
-          ```
+          tail -50 logs/scanner_\$(date +%Y-%m-%d).log
+          
+          # Manual workflow triggers
+          gh workflow run "Update Code Map"
+          gh workflow run "Generate GPT Snapshot"
+          gh workflow run "Daily Scanner Run"
+          \`\`\`
+          
+          ### Key Files Reference
+          - **Entry Point:** \`scanner/main.py\`
+          - **Config:** \`config/config.yml\`
+          - **Code Map:** \`docs/code_map.md\`
+          - **Specifications:** \`docs/spec.md\`
+          - **Latest Reports:** \`reports/\$(date +%Y-%m-%d).{md,json}\`
+          - **Snapshots:** \`snapshots/runtime/\$(date +%Y-%m-%d).json\`
+          
+          ---
+          
+          ## Important Notes
+          
+          ### API Keys & Secrets
+          - **CMC_API_KEY:** Set in GitHub Secrets + Codespaces Secrets
+          - **Free Tier:** 333 calls/month (using ~1/day)
+          
+          ### GitHub Actions Workflows
+          - **Daily Scanner Run:** 6:00 AM UTC daily
+          - **Update Code Map:** On Python file changes
+          - **Generate GPT Snapshot:** On push to main (this workflow)
+          
+          ### Known Limitations
+          - Some MEXC pairs have limited history (<60 days) → ~2-5% excluded
+          - Logging primarily to file (minimal console output)
+          - 213 symbols unmapped (low-volume/new tokens)
+          
+          ### Not Implemented (By Design)
+          - Global/combined scores (intentionally separate)
+          - ML/AI predictions (v1 scope)
+          - Auto-trading/execution (research tool only)
+          
+          ---
+          
+          ## Next Steps
+          
+          ### If Continuing Development:
+          1. Check this snapshot for recent changes
+          2. Review latest scanner reports in \`reports/\`
+          3. Verify GitHub Actions are running correctly
+          4. Decide: Implement Phase 7 (Backtesting) or refine existing features?
+          
+          ### If Monitoring Only:
+          1. Check daily reports: \`reports/YYYY-MM-DD.md\`
+          2. Look for high-scoring Reversal setups
+          3. Monitor GitHub Actions runs
+          4. Adjust config thresholds if needed: \`config/config.yml\`
+          
+          ### If Issues Arise:
+          1. Check logs: \`logs/scanner_YYYY-MM-DD.log\`
+          2. Verify CMC_API_KEY in GitHub/Codespaces Secrets
+          3. Check cache freshness: \`data/raw/\$(date +%Y-%m-%d)/\`
+          4. Review GitHub Actions workflow logs
           
           ---
           
           ## End of Snapshot
           
-          **Next Review:** Before next development session
-          **Status:** ✅ Stable
-          SNAPSHOT_EOF
+          **Generated:** ${SNAPSHOT_TIMESTAMP}  
+          **Next Review:** Before next development session  
+          **Status:** ✅ ${PHASE} - Stable
+          SNAPSHOT_FOOTER
           
-          echo "✓ Snapshot created for ${SNAPSHOT_DATE}"
+          echo "✓ Comprehensive snapshot created for ${SNAPSHOT_DATE}"
+          echo "  Total sections: 12"
+          echo "  Includes: Status, Changes, State, Phases, Tasks, Context, Commands, Notes, Next Steps"
       
       - name: Commit snapshot
         run: |
@@ -150,6 +345,28 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "snapshots: add GPT snapshot for ${SNAPSHOT_DATE} [skip ci]"
+            git commit -m "snapshots: add comprehensive GPT snapshot for ${SNAPSHOT_DATE} [skip ci]"
             git push
+            echo "✓ Snapshot committed and pushed"
           fi
+      
+      - name: Summary
+        env:
+          SNAPSHOT_DATE: ${{ steps.meta.outputs.date }}
+        run: |
+          echo "✅ GPT Snapshot Generated Successfully"
+          echo ""
+          echo "📋 Snapshot Details:"
+          echo "  Location: snapshots/gpt/gpt_snapshot_${SNAPSHOT_DATE}.md"
+          echo "  Type: ${{ github.event.inputs.snapshot_type || 'automatic' }}"
+          echo "  Sections: 12 comprehensive sections"
+          echo ""
+          echo "📦 Includes:"
+          echo "  ✓ Recent commits & changes"
+          echo "  ✓ Current project state"
+          echo "  ✓ Completed phases overview"
+          echo "  ✓ Architecture reference"
+          echo "  ✓ Quick commands"
+          echo "  ✓ Context for next session"
+          echo "  ✓ Known limitations"
+          echo "  ✓ Next steps guidance"
