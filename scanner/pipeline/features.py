@@ -87,7 +87,7 @@ class FeatureEngine:
                 # Meta info
                 symbol_features['meta'] = {
                     'symbol': symbol,
-                    'last_update': tf_data['1d'][-1][0] if '1d' in tf_data else None
+                    'last_update': int(tf_data['1d'][-1][0]) if '1d' in tf_data else None
                 }
                 
                 results[symbol] = symbol_features
@@ -112,7 +112,7 @@ class FeatureEngine:
             timeframe: '1d' or '4h'
         
         Returns:
-            Feature dict
+            Feature dict (all numpy types converted to Python native types)
         """
         # Extract OHLCV arrays
         closes = np.array([k[4] for k in klines], dtype=float)
@@ -123,10 +123,10 @@ class FeatureEngine:
         features = {}
         
         # Current price
-        features['close'] = closes[-1]
-        features['high'] = highs[-1]
-        features['low'] = lows[-1]
-        features['volume'] = volumes[-1]
+        features['close'] = float(closes[-1])
+        features['high'] = float(highs[-1])
+        features['low'] = float(lows[-1])
+        features['volume'] = float(volumes[-1])
         
         # Returns
         features['r_1'] = self._calc_return(closes, 1)
@@ -146,11 +146,11 @@ class FeatureEngine:
         
         # Volume
         features['volume_sma_14'] = self._calc_sma(volumes, 14)
-        features['volume_spike'] = (volumes[-1] / features['volume_sma_14']) if features['volume_sma_14'] > 0 else 1.0
+        features['volume_spike'] = float((volumes[-1] / features['volume_sma_14'])) if features['volume_sma_14'] and features['volume_sma_14'] > 0 else 1.0
         
-        # Higher High / Higher Low (trend structure)
-        features['hh_20'] = self._detect_higher_high(highs, lookback=20)
-        features['hl_20'] = self._detect_higher_low(lows, lookback=20)
+        # Higher High / Higher Low (trend structure) - convert to native bool
+        features['hh_20'] = bool(self._detect_higher_high(highs, lookback=20))
+        features['hl_20'] = bool(self._detect_higher_low(lows, lookback=20))
         
         # Breakout distance (distance to recent high)
         features['breakout_dist_20'] = self._calc_breakout_distance(closes, highs, lookback=20)
@@ -161,17 +161,35 @@ class FeatureEngine:
         
         # Base detection (sideways consolidation)
         if timeframe == '1d':
-            features['base_detected'] = self._detect_base(closes, lows, lookback=30)
+            base_result = self._detect_base(closes, lows, lookback=30)
+            features['base_detected'] = bool(base_result) if base_result is not None else None
         else:
             features['base_detected'] = None
         
-        return features
+        # Ensure all numeric values are native Python types for JSON serialization
+        return self._convert_to_native_types(features)
+    
+    def _convert_to_native_types(self, features: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert numpy types to Python native types for JSON serialization."""
+        converted = {}
+        for key, value in features.items():
+            if value is None:
+                converted[key] = None
+            elif isinstance(value, (np.floating, np.float64, np.float32)):
+                converted[key] = float(value)
+            elif isinstance(value, (np.integer, np.int64, np.int32)):
+                converted[key] = int(value)
+            elif isinstance(value, (np.bool_, bool)):
+                converted[key] = bool(value)
+            else:
+                converted[key] = value
+        return converted
     
     def _calc_return(self, closes: np.ndarray, periods: int) -> Optional[float]:
         """Calculate return over N periods (%)."""
         if len(closes) <= periods:
             return None
-        return ((closes[-1] / closes[-periods-1]) - 1) * 100
+        return float(((closes[-1] / closes[-periods-1]) - 1) * 100)
     
     def _calc_ema(self, data: np.ndarray, period: int) -> Optional[float]:
         """Calculate Exponential Moving Average."""
@@ -184,13 +202,13 @@ class FeatureEngine:
         for val in data[1:]:
             ema = alpha * val + (1 - alpha) * ema
         
-        return ema
+        return float(ema)
     
     def _calc_sma(self, data: np.ndarray, period: int) -> Optional[float]:
         """Calculate Simple Moving Average."""
         if len(data) < period:
             return None
-        return np.mean(data[-period:])
+        return float(np.mean(data[-period:]))
     
     def _calc_atr_pct(
         self,
@@ -217,7 +235,7 @@ class FeatureEngine:
         atr = np.mean(tr[-period:])
         
         # As % of current price
-        return (atr / closes[-1]) * 100 if closes[-1] > 0 else None
+        return float((atr / closes[-1]) * 100) if closes[-1] > 0 else None
     
     def _detect_higher_high(self, highs: np.ndarray, lookback: int = 20) -> bool:
         """Detect if recent high is highest in lookback period."""
@@ -227,7 +245,7 @@ class FeatureEngine:
         recent_high = np.max(highs[-5:])  # Last 5 bars
         lookback_high = np.max(highs[-lookback:-5])  # Previous bars
         
-        return recent_high > lookback_high
+        return bool(recent_high > lookback_high)
     
     def _detect_higher_low(self, lows: np.ndarray, lookback: int = 20) -> bool:
         """Detect if recent low is higher than lookback period."""
@@ -237,7 +255,7 @@ class FeatureEngine:
         recent_low = np.min(lows[-5:])  # Last 5 bars
         lookback_low = np.min(lows[-lookback:-5])  # Previous bars
         
-        return recent_low > lookback_low
+        return bool(recent_low > lookback_low)
     
     def _calc_breakout_distance(
         self,
@@ -255,7 +273,7 @@ class FeatureEngine:
         recent_high = np.max(highs[-lookback:])
         current = closes[-1]
         
-        return ((current / recent_high) - 1) * 100
+        return float(((current / recent_high) - 1) * 100)
     
     def _calc_drawdown(self, closes: np.ndarray) -> Optional[float]:
         """Calculate drawdown from ATH (%)."""
@@ -265,7 +283,7 @@ class FeatureEngine:
         ath = np.max(closes)
         current = closes[-1]
         
-        return ((current / ath) - 1) * 100
+        return float(((current / ath) - 1) * 100)
     
     def _detect_base(
         self,
@@ -296,4 +314,4 @@ class FeatureEngine:
         
         low_volatility = recent_range < 0.15  # Less than 15% range
         
-        return no_new_lows and low_volatility
+        return bool(no_new_lows and low_volatility)
