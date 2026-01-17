@@ -292,7 +292,14 @@ class ReportGenerator:
         # Generate Excel
         try:
             from .excel_output import ExcelReportGenerator
-            excel_gen = ExcelReportGenerator(self.reports_dir.parent / 'config' / 'config.yml')
+            # Reconstruct config dict for Excel generator
+            excel_config = {
+                'output': {
+                    'reports_dir': str(self.reports_dir),
+                    'top_n_per_setup': self.top_n
+                }
+            }
+            excel_gen = ExcelReportGenerator(excel_config)
             excel_path = excel_gen.generate_excel_report(
                 reversal_results, breakout_results, pullback_results, run_date, metadata
             )
