@@ -1,6 +1,10 @@
 # Developer Guide
+Version: v1.0  
+Language: English  
+Audience: Developer + GPT
 
-## Working with AI Assistants (Claude)
+---
+## Working with AI Assistants
 
 This project is developed with AI assistance. This guide documents the workflow.
 
@@ -207,4 +211,4 @@ def filter_midcaps():
 
 ---
 
-## End of Guide
+## End of `dev_guide.md`
