@@ -2,3 +2,4 @@ requests
 PyYAML
 pandas
 python-dateutil
+numpy
