@@ -2,7 +2,7 @@
 Reversal Setup Scoring
 ======================
 
-Identifies downtrend → base → reclaim setups (like Humanity Protocol example).
+Identifies downtrend → base → reclaim setups.
 
 Scoring Components:
 1. Drawdown Context (30%) - Deep enough pullback from ATH
@@ -330,6 +330,8 @@ def score_reversals(
             
             results.append({
                 'symbol': symbol,
+                'price_usdt': features.get('price_usdt'),
+                'coin_name': features.get('coin_name'),
                 'score': score_result['score'],
                 'components': score_result['components'],
                 'penalties': score_result['penalties'],
