@@ -299,6 +299,8 @@ def score_breakouts(
             
             results.append({
                 'symbol': symbol,
+                'price_usdt': features.get('price_usdt'),
+                'coin_name': features.get('coin_name'),
                 'score': score_result['score'],
                 'components': score_result['components'],
                 'penalties': score_result['penalties'],
