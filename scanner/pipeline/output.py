@@ -2,7 +2,7 @@
 Output & Report Generation
 ===========================
 
-Generates human-readable (Markdown) and machine-readable (JSON) reports
+Generates human-readable (Markdown), machine-readable (JSON), and Excel reports
 from scored results.
 """
 
@@ -253,7 +253,7 @@ class ReportGenerator:
         metadata: Dict[str, Any] = None
     ) -> Dict[str, Path]:
         """
-        Generate and save both Markdown and JSON reports.
+        Generate and save Markdown, JSON, and Excel reports.
         
         Args:
             reversal_results: Scored reversal setups
@@ -263,34 +263,53 @@ class ReportGenerator:
             metadata: Optional metadata
         
         Returns:
-            Dict with paths: {'markdown': Path, 'json': Path}
+            Dict with paths: {'markdown': Path, 'json': Path, 'excel': Path}
         """
         logger.info(f"Generating reports for {run_date}")
         
-        # Generate reports
+        # Generate Markdown
         md_content = self.generate_markdown_report(
             reversal_results, breakout_results, pullback_results, run_date
         )
         
+        # Generate JSON
         json_content = self.generate_json_report(
             reversal_results, breakout_results, pullback_results, run_date, metadata
         )
         
-        # Save files
+        # Save Markdown
         md_path = self.reports_dir / f"{run_date}.md"
-        json_path = self.reports_dir / f"{run_date}.json"
-        
-        # Write Markdown
         with open(md_path, 'w', encoding='utf-8') as f:
             f.write(md_content)
         logger.info(f"Markdown report saved: {md_path}")
         
-        # Write JSON
+        # Save JSON
+        json_path = self.reports_dir / f"{run_date}.json"
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(json_content, f, indent=2, ensure_ascii=False)
         logger.info(f"JSON report saved: {json_path}")
         
-        return {
+        # Generate Excel
+        try:
+            from .excel_output import ExcelReportGenerator
+            excel_gen = ExcelReportGenerator(self.reports_dir.parent / 'config' / 'config.yml')
+            excel_path = excel_gen.generate_excel_report(
+                reversal_results, breakout_results, pullback_results, run_date, metadata
+            )
+            logger.info(f"Excel report saved: {excel_path}")
+        except ImportError:
+            logger.warning("openpyxl not installed - Excel export skipped")
+            excel_path = None
+        except Exception as e:
+            logger.error(f"Excel generation failed: {e}")
+            excel_path = None
+        
+        result = {
             'markdown': md_path,
             'json': json_path
         }
+        
+        if excel_path:
+            result['excel'] = excel_path
+        
+        return result
