@@ -14,11 +14,12 @@ def validate_features(report_path: str):
     with open(report_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    if not isinstance(data, dict) or "results" not in data:
-        print("❌ Ungültiges Report-Format – keine 'results'-Sektion gefunden.")
+    section_key = "results" if "results" in data else "data"
+    if section_key not in data:
+        print("❌ Ungültiges Report-Format – keine 'data' oder 'results'-Sektion gefunden.")
         return
-
-    results = data["results"]
+    
+    results = data[section_key]
     if not results:
         print("⚠️ Keine Ergebnisse im Report.")
         return
