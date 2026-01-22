@@ -1,7 +1,7 @@
 # Spot Altcoin Scanner • GPT Snapshot
 
-**Generated:** 2026-01-22 19:38 UTC  
-**Commit:** `54149ba` (54149ba23d9cb0e96f7745f5cc5be5664f4aeecc)  
+**Generated:** 2026-01-22 23:34 UTC  
+**Commit:** `0cc318b` (0cc318be7d26591f88fc1b65c59191e8f383ba2a)  
 **Status:** MVP Complete (Phase 6)  
 
 ---
@@ -53,12 +53,14 @@
 | `scanner/utils/__init__.py` | - | - |
 | `scanner/utils/io_utils.py` | - | `load_json`, `save_json`, `get_cache_path`, `cache_exists`, `load_cache` ... (+1 more) |
 | `scanner/utils/logging_utils.py` | - | `setup_logger`, `get_logger` |
+| `scanner/utils/raw_collector.py` | - | `collect_raw_ohlcv`, `collect_raw_marketcap`, `collect_raw_features` |
+| `scanner/utils/save_raw.py` | - | `save_raw_snapshot` |
 | `scanner/utils/time_utils.py` | - | `utc_now`, `utc_timestamp`, `utc_date`, `parse_timestamp`, `timestamp_to_ms` ... (+1 more) |
 
 **Statistics:**
-- Total Modules: 25
+- Total Modules: 27
 - Total Classes: 15
-- Total Functions: 23
+- Total Functions: 27
 
 ---
 
@@ -78,7 +80,7 @@ requires-python = ">=3.11"
 
 ### `requirements.txt`
 
-**SHA256:** `c9fc1c962a19b08e91def4b926188e1ab3c21b12a0c9fbf0fec1608a0c4206d1`
+**SHA256:** `5491fb2c532a194a57449e717dcf8cad07f8791c1c72c063c6f39a8b8a19c503`
 
 ```text
 # HTTP & API
@@ -99,6 +101,9 @@ loguru>=0.7.0
 
 # Excel output
 openpyxl>=3.1.0
+
+# save raw data
+pyarrow>=14.0.1
 
 ```
 
@@ -1106,6 +1111,59 @@ See /docs/spec.md for the full technical specification.
 
 ```
 
+### `scanner/utils/save_raw.py`
+
+**SHA256:** `4d6c75b8cd92bc08f2cada6c89181f81ca24c3f3915fce40533cac1bf17b6f4e`
+
+```python
+import os
+import pandas as pd
+from datetime import datetime
+
+
+def save_raw_snapshot(df: pd.DataFrame, source_name: str = "unknown"):
+    """
+    Speichert die Rohdaten eines Runs im Ordner data/raw/<timestamp>/.
+    Exportiert immer zwei Formate:
+      1. Parquet (für Analyse, effizient)
+      2. CSV (für manuelle Kontrolle)
+    """
+
+    timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
+    base_dir = os.path.join("data", "raw", timestamp)
+    os.makedirs(base_dir, exist_ok=True)
+
+    parquet_path = os.path.join(base_dir, f"{source_name}.parquet")
+    csv_path = os.path.join(base_dir, f"{source_name}.csv")
+
+    saved_paths = {"parquet": None, "csv": None}
+
+    # --- 1️⃣ Parquet speichern ---
+    try:
+        df.to_parquet(parquet_path, index=False)
+        print(f"[INFO] Raw data snapshot saved as Parquet: {parquet_path}")
+        saved_paths["parquet"] = parquet_path
+    except Exception as e:
+        print(f"[WARN] Parquet export failed ({e}). You may need to install 'pyarrow' or 'fastparquet'.")
+
+    # --- 2️⃣ CSV speichern ---
+    try:
+        df.to_csv(csv_path, index=False)
+        print(f"[INFO] Raw data snapshot saved as CSV: {csv_path}")
+        saved_paths["csv"] = csv_path
+    except Exception as e:
+        print(f"[ERROR] CSV export failed: {e}")
+
+    # --- Ergebnis ---
+    if saved_paths["parquet"] or saved_paths["csv"]:
+        print(f"[INFO] Raw data snapshot complete → {base_dir}")
+    else:
+        print(f"[ERROR] Could not save any raw data snapshot.")
+
+    return saved_paths
+
+```
+
 ### `scanner/utils/io_utils.py`
 
 **SHA256:** `677ddb859b6128ad55a7f44837a3a807e7c0cc5fc23f3be564d32e558d3fee7a`
@@ -1199,6 +1257,106 @@ def save_cache(data: Any, cache_type: str, date: Optional[str] = None) -> None:
     """Save data to cache."""
     cache_path = get_cache_path(cache_type, date)
     save_json(data, cache_path)
+
+```
+
+### `scanner/utils/raw_collector.py`
+
+**SHA256:** `e59a8a89cd7e30f14a26bbebc3225279520edcfc4f46ab9f63becbe4d7882e2e`
+
+```python
+"""
+Raw Data Collector Utilities
+============================
+
+Diese Datei bündelt alle Funktionen, die Rohdaten aus der Pipeline
+(OHLCV, MarketCap, Feature-Inputs etc.) zentral speichern.
+
+Ziel:
+- Einheitliche Logik für Speicherung & Logging
+- Immer beide Formate (Parquet + CSV)
+- Kein Code-Duplikat in den Clients oder Pipelines
+"""
+
+import pandas as pd
+from typing import List, Dict, Any
+from scanner.utils.save_raw import save_raw_snapshot
+
+
+# ==========================================================
+# OHLCV Snapshots
+# ==========================================================
+
+def collect_raw_ohlcv(results: Dict[str, Dict[str, Any]]):
+    """
+    Speichert alle OHLCV-Daten als Rohdaten-Snapshot.
+    Erwartet das Dictionary, das aus OHLCVFetcher.fetch_all() zurückkommt.
+    """
+    if not results:
+        print("[WARN] No OHLCV data to snapshot.")
+        return None
+
+    try:
+        flat_records = []
+        for symbol, tf_data in results.items():
+            for tf, candles in tf_data.items():
+                for candle in candles:
+                    flat_records.append({
+                        "symbol": symbol,
+                        "timeframe": tf,
+                        "open_time": candle[0],
+                        "open": candle[1],
+                        "high": candle[2],
+                        "low": candle[3],
+                        "close": candle[4],
+                        "volume": candle[5],
+                    })
+        df = pd.DataFrame(flat_records)
+        return save_raw_snapshot(df, source_name="ohlcv_snapshot")
+    except Exception as e:
+        print(f"[WARN] Could not collect OHLCV snapshot: {e}")
+        return None
+
+
+# ==========================================================
+# MarketCap Snapshots
+# ==========================================================
+
+def collect_raw_marketcap(data: List[Dict[str, Any]]):
+    """
+    Speichert alle MarketCap-Daten (Listings) als Rohdaten-Snapshot.
+    Erwartet die Ausgabe aus MarketCapClient.get_listings() oder get_all_listings().
+    """
+    if not data:
+        print("[WARN] No MarketCap data to snapshot.")
+        return None
+
+    try:
+        df = pd.DataFrame(data)
+        return save_raw_snapshot(df, source_name="marketcap_snapshot")
+    except Exception as e:
+        print(f"[WARN] Could not collect MarketCap snapshot: {e}")
+        return None
+
+
+# ==========================================================
+# Feature Snapshots (optional für spätere Erweiterung)
+# ==========================================================
+
+def collect_raw_features(df: pd.DataFrame, stage_name: str = "features"):
+    """
+    Speichert Feature-Inputs oder Zwischenstufen.
+    Ideal für Debugging oder Backtests.
+    """
+    if df is None or df.empty:
+        print("[WARN] No feature data to snapshot.")
+        return None
+
+    try:
+        return save_raw_snapshot(df, source_name=f"{stage_name}_snapshot")
+    except Exception as e:
+        print(f"[WARN] Could not collect feature snapshot: {e}")
+        return None
 
 ```
 
@@ -1945,7 +2103,7 @@ class ExcelReportGenerator:
 
 ### `scanner/pipeline/features.py`
 
-**SHA256:** `20fa918a96e84b8ffcc588b8824719474b77e4cb8c5f049edc4495d8b631ddfc`
+**SHA256:** `9a7b5ee0dfcfe75c2f30c4f83ce38109c4cb6487508a54997c255120076c1dfc`
 
 ```python
 """
@@ -1968,313 +2126,184 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-
 class FeatureEngine:
-    """Computes technical features from OHLCV data."""
-    
+    """Computes technical features from OHLCV data (v1.1 – integrity upgrade)."""
+
     def __init__(self, config: Dict[str, Any]):
-        """
-        Initialize feature engine.
-        
-        Args:
-            config: Config dict (not used currently, for future extensions)
-        """
         self.config = config
-        logger.info("Feature Engine initialized")
-    
-    def compute_all(
-        self,
-        ohlcv_data: Dict[str, Dict[str, List[List]]]
-    ) -> Dict[str, Dict[str, Any]]:
-        """
-        Compute features for all symbols.
-        
-        Args:
-            ohlcv_data: Dict mapping symbol -> timeframe -> klines
-                {
-                    'BTCUSDT': {
-                        '1d': [[ts, o, h, l, c, v, ...], ...],
-                        '4h': [[ts, o, h, l, c, v, ...], ...]
-                    },
-                    ...
-                }
-        
-        Returns:
-            Dict mapping symbol -> features
-            {
-                'BTCUSDT': {
-                    '1d': {...},
-                    '4h': {...},
-                    'meta': {...}
-                },
-                ...
-            }
-        """
+        logger.info("Feature Engine v1.1 initialized")
+
+    # -------------------------------------------------------------------------
+    # Main entry point
+    # -------------------------------------------------------------------------
+    def compute_all(self, ohlcv_data: Dict[str, Dict[str, List[List]]]) -> Dict[str, Dict[str, Any]]:
         results = {}
         total = len(ohlcv_data)
-        
         logger.info(f"Computing features for {total} symbols")
-        
+
         for i, (symbol, tf_data) in enumerate(ohlcv_data.items(), 1):
-            logger.debug(f"[{i}/{total}] Computing features for {symbol}")
-            
             try:
+                logger.debug(f"[{i}/{total}] Computing features for {symbol}")
                 symbol_features = {}
-                
-                # Compute features for each timeframe
-                if '1d' in tf_data:
-                    symbol_features['1d'] = self._compute_timeframe_features(
-                        tf_data['1d'], 
-                        timeframe='1d'
-                    )
-                
-                if '4h' in tf_data:
-                    symbol_features['4h'] = self._compute_timeframe_features(
-                        tf_data['4h'],
-                        timeframe='4h'
-                    )
-                
-                # Meta info
-                symbol_features['meta'] = {
-                    'symbol': symbol,
-                    'last_update': int(tf_data['1d'][-1][0]) if '1d' in tf_data else None
+
+                if "1d" in tf_data:
+                    symbol_features["1d"] = self._compute_timeframe_features(tf_data["1d"], "1d", symbol)
+                if "4h" in tf_data:
+                    symbol_features["4h"] = self._compute_timeframe_features(tf_data["4h"], "4h", symbol)
+
+                symbol_features["meta"] = {
+                    "symbol": symbol,
+                    "last_update": int(tf_data.get("1d", [[None]])[-1][0]) if "1d" in tf_data else None,
                 }
-                
                 results[symbol] = symbol_features
-                
             except Exception as e:
                 logger.error(f"Failed to compute features for {symbol}: {e}")
-                continue
-        
         logger.info(f"Features computed for {len(results)}/{total} symbols")
         return results
-    
-    def _compute_timeframe_features(
-        self,
-        klines: List[List],
-        timeframe: str
-    ) -> Dict[str, Any]:
-        """
-        Compute features for a single timeframe.
-        
-        Args:
-            klines: List of klines [[ts, o, h, l, c, v, ...], ...]
-            timeframe: '1d' or '4h'
-        
-        Returns:
-            Feature dict (all numpy types converted to Python native types)
-        """
-        # Extract OHLCV arrays
+
+    # -------------------------------------------------------------------------
+    # Timeframe feature computation
+    # -------------------------------------------------------------------------
+    def _compute_timeframe_features(self, klines: List[List], timeframe: str, symbol: str) -> Dict[str, Any]:
         closes = np.array([k[4] for k in klines], dtype=float)
         highs = np.array([k[2] for k in klines], dtype=float)
         lows = np.array([k[3] for k in klines], dtype=float)
         volumes = np.array([k[5] for k in klines], dtype=float)
-        
-        features = {}
-        
-        # Current price
-        features['close'] = float(closes[-1])
-        features['high'] = float(highs[-1])
-        features['low'] = float(lows[-1])
-        features['volume'] = float(volumes[-1])
-        
-        # Returns
-        features['r_1'] = self._calc_return(closes, 1)
-        features['r_3'] = self._calc_return(closes, 3)
-        features['r_7'] = self._calc_return(closes, 7)
-        
-        # EMAs
-        features['ema_20'] = self._calc_ema(closes, 20)
-        features['ema_50'] = self._calc_ema(closes, 50)
-        
-        # Price relative to EMAs (%)
-        features['dist_ema20_pct'] = ((closes[-1] / features['ema_20']) - 1) * 100 if features['ema_20'] else None
-        features['dist_ema50_pct'] = ((closes[-1] / features['ema_50']) - 1) * 100 if features['ema_50'] else None
-        
-        # ATR (as % of price)
-        features['atr_pct'] = self._calc_atr_pct(highs, lows, closes, period=14)
-        
-        # Volume
-        # Wenn kein SMA-Wert vorhanden oder dieser 0 ist, setze Volume-Spike = 0.0 (neutral)
-        features['volume_sma_14'] = self._calc_sma(volumes, 14)
-        features['volume_spike'] = (
-            float(volumes[-1] / features['volume_sma_14'])
-            if features.get('volume_sma_14', 0) > 0
-            else 0.0
-        )
-        
-        # Higher High / Higher Low (trend structure) - convert to native bool
-        features['hh_20'] = bool(self._detect_higher_high(highs, lookback=20))
-        features['hl_20'] = bool(self._detect_higher_low(lows, lookback=20))
-        
-        # Breakout distance (distance to recent high)
-        # Fallback auf 0.0, falls zu wenig Daten oder NaN-Werte vorhanden sind
-        features['breakout_dist_20'] = (
-            self._calc_breakout_distance(closes, highs, lookback=20) or 0.0
-        )
-        features['breakout_dist_30'] = (
-            self._calc_breakout_distance(closes, highs, lookback=30) or 0.0
-        )
-        
-        # Drawdown from ATH
-        features['drawdown_from_ath'] = self._calc_drawdown(closes)
-        
-        # Base detection (sideways consolidation)
-        if timeframe == '1d':
-            base_result = self._detect_base(closes, lows, lookback=30)
-            features['base_detected'] = bool(base_result) if base_result is not None else None
-        else:
-            features['base_detected'] = None
-        
-        # Ensure all numeric values are native Python types for JSON serialization
-        return self._convert_to_native_types(features)
-    
-    def _convert_to_native_types(self, features: Dict[str, Any]) -> Dict[str, Any]:
-        """Convert numpy types to Python native types for JSON serialization."""
-        converted = {}
-        for key, value in features.items():
-            if value is None:
-                converted[key] = None
-            elif isinstance(value, (np.floating, np.float64, np.float32)):
-                converted[key] = float(value)
-            elif isinstance(value, (np.integer, np.int64, np.int32)):
-                converted[key] = int(value)
-            elif isinstance(value, (np.bool_, bool)):
-                converted[key] = bool(value)
-            else:
-                converted[key] = value
-        return converted
-    
-    def _calc_return(self, closes: np.ndarray, periods: int) -> Optional[float]:
-        """Calculate return over N periods (%)."""
+
+        if len(closes) < 50:
+            logger.warning(f"[{symbol}] insufficient candles ({len(closes)}) for timeframe {timeframe}")
+            return {}
+
+        f = {}
+        f["close"], f["high"], f["low"], f["volume"] = map(float, (closes[-1], highs[-1], lows[-1], volumes[-1]))
+
+        # Returns & EMAs
+        f["r_1"] = self._calc_return(symbol, closes, 1)
+        f["r_3"] = self._calc_return(symbol, closes, 3)
+        f["r_7"] = self._calc_return(symbol, closes, 7)
+        f["ema_20"] = self._calc_ema(symbol, closes, 20)
+        f["ema_50"] = self._calc_ema(symbol, closes, 50)
+
+        f["dist_ema20_pct"] = ((closes[-1] / f["ema_20"]) - 1) * 100 if f.get("ema_20") else np.nan
+        f["dist_ema50_pct"] = ((closes[-1] / f["ema_50"]) - 1) * 100 if f.get("ema_50") else np.nan
+
+        f["atr_pct"] = self._calc_atr_pct(symbol, highs, lows, closes, 14)
+        f["volume_sma_14"] = self._calc_sma(volumes, 14)
+        f["volume_spike"] = self._calc_volume_spike(symbol, volumes, f["volume_sma_14"])
+
+        # Trend structure
+        f["hh_20"] = bool(self._detect_higher_high(highs, 20))
+        f["hl_20"] = bool(self._detect_higher_low(lows, 20))
+
+        # Structural metrics
+        f["breakout_dist_20"] = self._calc_breakout_distance(symbol, closes, highs, 20)
+        f["breakout_dist_30"] = self._calc_breakout_distance(symbol, closes, highs, 30)
+        f["drawdown_from_ath"] = self._calc_drawdown(closes)
+
+        # Base detection
+        f["base_score"] = self._detect_base(symbol, closes, lows, 30) if timeframe == "1d" else np.nan
+
+        return self._convert_to_native_types(f)
+
+    # -------------------------------------------------------------------------
+    # Calculation methods
+    # -------------------------------------------------------------------------
+    def _calc_return(self, symbol: str, closes: np.ndarray, periods: int) -> Optional[float]:
         if len(closes) <= periods:
-            return None
-        return float(((closes[-1] / closes[-periods-1]) - 1) * 100)
-    
-    def _calc_ema(self, data: np.ndarray, period: int) -> Optional[float]:
-        """Calculate Exponential Moving Average."""
+            logger.warning(f"[{symbol}] insufficient candles for return({periods})")
+            return np.nan
+        try:
+            return float(((closes[-1] / closes[-periods-1]) - 1) * 100)
+        except Exception as e:
+            logger.error(f"[{symbol}] return({periods}) error: {e}")
+            return np.nan
+
+    def _calc_ema(self, symbol: str, data: np.ndarray, period: int) -> Optional[float]:
         if len(data) < period:
-            return None
-        
+            logger.warning(f"[{symbol}] insufficient data for EMA{period}")
+            return np.nan
         alpha = 2 / (period + 1)
         ema = data[0]
-        
         for val in data[1:]:
             ema = alpha * val + (1 - alpha) * ema
-        
         return float(ema)
-    
+
     def _calc_sma(self, data: np.ndarray, period: int) -> Optional[float]:
-        """Calculate Simple Moving Average."""
-        if len(data) < period:
-            return None
-        return float(np.mean(data[-period:]))
-    
-    def _calc_atr_pct(
-        self,
-        highs: np.ndarray,
-        lows: np.ndarray,
-        closes: np.ndarray,
-        period: int = 14
-    ) -> Optional[float]:
-        """Calculate Average True Range as % of price."""
+        return float(np.nanmean(data[-period:])) if len(data) >= period else np.nan
+
+    def _calc_volume_spike(self, symbol: str, volumes: np.ndarray, sma: Optional[float]) -> float:
+        if sma is None or np.isnan(sma) or sma == 0:
+            logger.warning(f"[{symbol}] volume_spike skipped (SMA invalid)")
+            return np.nan
+        return float(volumes[-1] / sma)
+
+    def _calc_atr_pct(self, symbol: str, highs: np.ndarray, lows: np.ndarray, closes: np.ndarray, period: int) -> Optional[float]:
         if len(highs) < period + 1:
-            return None
-        
-        # True Range
-        tr = []
-        for i in range(1, len(highs)):
-            hl = highs[i] - lows[i]
-            hc = abs(highs[i] - closes[i-1])
-            lc = abs(lows[i] - closes[i-1])
-            tr.append(max(hl, hc, lc))
-        
-        tr = np.array(tr)
-        
-        # ATR
+            logger.warning(f"[{symbol}] insufficient candles for ATR{period}")
+            return np.nan
+        tr = [max(highs[i]-lows[i], abs(highs[i]-closes[i-1]), abs(lows[i]-closes[i-1])) for i in range(1, len(highs))]
         atr = np.mean(tr[-period:])
-        
-        # As % of current price
-        return float((atr / closes[-1]) * 100) if closes[-1] > 0 else None
-    
+        return float((atr / closes[-1]) * 100) if closes[-1] > 0 else np.nan
+
+    def _calc_breakout_distance(self, symbol: str, closes: np.ndarray, highs: np.ndarray, lookback: int) -> Optional[float]:
+        if len(highs) < lookback:
+            logger.warning(f"[{symbol}] insufficient candles for breakout_dist_{lookback}")
+            return np.nan
+        try:
+            recent_high = np.nanmax(highs[-lookback:])
+            return float(((closes[-1] / recent_high) - 1) * 100)
+        except Exception as e:
+            logger.error(f"[{symbol}] breakout_dist_{lookback} error: {e}")
+            return np.nan
+
+    def _calc_drawdown(self, closes: np.ndarray) -> Optional[float]:
+        if len(closes) == 0:
+            return np.nan
+        ath = np.nanmax(closes)
+        return float(((closes[-1] / ath) - 1) * 100)
+
+    # -------------------------------------------------------------------------
+    # Structure detection
+    # -------------------------------------------------------------------------
     def _detect_higher_high(self, highs: np.ndarray, lookback: int = 20) -> bool:
-        """Detect if recent high is highest in lookback period."""
         if len(highs) < lookback:
             return False
-        
-        recent_high = np.max(highs[-5:])  # Last 5 bars
-        lookback_high = np.max(highs[-lookback:-5])  # Previous bars
-        
-        return bool(recent_high > lookback_high)
-    
+        return bool(np.nanmax(highs[-5:]) > np.nanmax(highs[-lookback:-5]))
+
     def _detect_higher_low(self, lows: np.ndarray, lookback: int = 20) -> bool:
-        """Detect if recent low is higher than lookback period."""
         if len(lows) < lookback:
             return False
-        
-        recent_low = np.min(lows[-5:])  # Last 5 bars
-        lookback_low = np.min(lows[-lookback:-5])  # Previous bars
-        
-        return bool(recent_low > lookback_low)
-    
-    def _calc_breakout_distance(
-        self,
-        closes: np.ndarray,
-        highs: np.ndarray,
-        lookback: int = 20
-    ) -> Optional[float]:
-        """
-        Calculate distance to breakout level (%).
-        Positive = above recent high, Negative = below.
-        """
-        if len(highs) < lookback:
-            return None
-        
-        recent_high = np.max(highs[-lookback:])
-        current = closes[-1]
-        
-        return float(((current / recent_high) - 1) * 100)
-    
-    def _calc_drawdown(self, closes: np.ndarray) -> Optional[float]:
-        """Calculate drawdown from ATH (%)."""
-        if len(closes) == 0:
-            return None
-        
-        ath = np.max(closes)
-        current = closes[-1]
-        
-        return float(((current / ath) - 1) * 100)
-    
-    def _detect_base(
-        self,
-        closes: np.ndarray,
-        lows: np.ndarray,
-        lookback: int = 30
-    ) -> Optional[bool]:
-        """
-        Detect base formation (sideways consolidation).
-        
-        Criteria:
-        - No new lows in last 10 bars
-        - Low volatility (ATR)
-        """
+        return bool(np.nanmin(lows[-5:]) > np.nanmin(lows[-lookback:-5]))
+
+    def _detect_base(self, symbol: str, closes: np.ndarray, lows: np.ndarray, lookback: int = 30) -> Optional[float]:
         if len(closes) < lookback:
-            return None
-        
-        recent_period = lookback // 3  # Last third of lookback
-        
-        # Check for new lows
-        recent_low = np.min(lows[-recent_period:])
-        prior_low = np.min(lows[-lookback:-recent_period])
-        
+            logger.warning(f"[{symbol}] insufficient candles for base detection")
+            return np.nan
+        recent_low = np.nanmin(lows[-lookback//3:])
+        prior_low = np.nanmin(lows[-lookback:-lookback//3])
         no_new_lows = recent_low >= prior_low
-        
-        # Check volatility (simple range check)
-        recent_range = (np.max(closes[-recent_period:]) - np.min(closes[-recent_period:])) / np.mean(closes[-recent_period:])
-        
-        low_volatility = recent_range < 0.15  # Less than 15% range
-        
-        return bool(no_new_lows and low_volatility)
+        price_range = (np.nanmax(closes[-lookback:]) - np.nanmin(closes[-lookback:])) / np.nanmean(closes[-lookback:]) * 100
+        stability_score = max(0.0, 100.0 - price_range)
+        base_score = stability_score if no_new_lows else stability_score / 2
+        return float(base_score)
+
+    # -------------------------------------------------------------------------
+    # Utility
+    # -------------------------------------------------------------------------
+    def _convert_to_native_types(self, features: Dict[str, Any]) -> Dict[str, Any]:
+        converted = {}
+        for k, v in features.items():
+            if v is None or (isinstance(v, float) and np.isnan(v)):
+                converted[k] = None
+            elif isinstance(v, (np.floating, np.float64, np.float32)):
+                converted[k] = float(v)
+            elif isinstance(v, (np.integer, np.int64, np.int32)):
+                converted[k] = int(v)
+            elif isinstance(v, (np.bool_, bool)):
+                converted[k] = bool(v)
+            else:
+                converted[k] = v
+        return converted
 
 ```
 
@@ -2902,7 +2931,7 @@ class ShortlistSelector:
 
 ### `scanner/pipeline/ohlcv.py`
 
-**SHA256:** `54be3754a9ffb8a4f51784f386f8dba43125df1b6598abaf0c3506663ce6b87f`
+**SHA256:** `f907114a23d31918243cb948d0cdc911f5b1f9d7c4f33be8fec6de699f394261`
 
 ```python
 """
@@ -2916,6 +2945,13 @@ Supports multiple timeframes with caching.
 import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime
+import pandas as pd
+
+# 🔹 Neu: zentralisierte Rohdaten-Speicherung
+try:
+    from scanner.utils.raw_collector import collect_raw_ohlcv
+except ImportError:
+    collect_raw_ohlcv = None
 
 logger = logging.getLogger(__name__)
 
@@ -3017,6 +3053,13 @@ class OHLCVFetcher:
         
         logger.info(f"OHLCV fetch complete: {len(results)}/{total} symbols with complete data")
         
+        # 🔹 Rohdaten-Snapshot über zentralen Collector speichern
+        if collect_raw_ohlcv and results:
+            try:
+                collect_raw_ohlcv(results)
+            except Exception as e:
+                logger.warning(f"Could not collect raw OHLCV snapshot: {e}")
+
         return results
     
     def get_fetch_stats(
@@ -3609,7 +3652,7 @@ class SymbolMapper:
 
 ### `scanner/clients/marketcap_client.py`
 
-**SHA256:** `2531da553442b95077a0dbbbc6b583c3e4086057bc475b21b6d632edf5334aab`
+**SHA256:** `032a85e0acbe035b524fab1338718f382293b4843930f6f639f9fbb2ac1bfeef`
 
 ```python
 """
@@ -3629,6 +3672,11 @@ import requests
 from ..utils.logging_utils import get_logger
 from ..utils.io_utils import load_cache, save_cache, cache_exists
 
+# 🔹 Neu: zentralisierte Rohdaten-Speicherung
+try:
+    from scanner.utils.raw_collector import collect_raw_marketcap
+except ImportError:
+    collect_raw_marketcap = None
 
 logger = get_logger(__name__)
 
@@ -3763,6 +3811,13 @@ class MarketCapClient:
             
             # Cache the full response
             save_cache(response, cache_key)
+
+            # 🔹 Rohdaten-Snapshot über zentralen Collector speichern
+            if collect_raw_marketcap and data:
+                try:
+                    collect_raw_marketcap(data)
+                except Exception as e:
+                    logger.warning(f"Could not collect MarketCap snapshot: {e}")
             
             return data
             
@@ -4507,7 +4562,7 @@ def score_pullbacks(
 
 ### `scanner/pipeline/scoring/breakout.py`
 
-**SHA256:** `41bf484e393f7d4583ef333151ae1bf1a08c07e55c44b455fa99b79a892288e0`
+**SHA256:** `11b047c2bf7c8ba58547ea5ca082bb4ab55f4683af35932e283620b45aeb08dd`
 
 ```python
 """
@@ -4642,33 +4697,37 @@ class BreakoutScorer:
     
     def _score_breakout(self, f1d: Dict[str, Any]) -> float:
         """
-        Score breakout distance (0-100).
-        
-        Ideal: 5-10% above recent high
+        Scales breakout distance (-5% … +3%) into a 0–100 score.
+        Professional definition:
+        - Below −5%: no breakout pressure
+        - −2 … 0%: pre-breakout compression
+        - 0 … +1%: breakout confirmation
+        - > +2%: overextended (score decays)
         """
-        dist = f1d.get('breakout_dist_20', -100)
-        
-        # Below high (no breakout)
-        if dist < self.min_breakout_pct:
+        import numpy as np
+        dist = f1d.get('breakout_dist_20', np.nan)
+        if np.isnan(dist):
+            return np.nan
+    
+        # Far below range high
+        if dist <= -5:
             return 0.0
-        
-        # Ideal range
-        if self.ideal_breakout_pct <= dist <= self.ideal_breakout_pct * 2:
-            return 100.0
-        
-        # Below ideal (linear scale)
-        if dist < self.ideal_breakout_pct:
-            ratio = (dist - self.min_breakout_pct) / (self.ideal_breakout_pct - self.min_breakout_pct)
-            return 50.0 + ratio * 50.0
-        
-        # Above ideal but not overextended
-        if dist < self.max_breakout_pct:
-            excess = dist - (self.ideal_breakout_pct * 2)
-            penalty = (excess / (self.max_breakout_pct - self.ideal_breakout_pct * 2)) * 30
-            return max(70.0 - penalty, 40.0)
-        
-        # Overextended
-        return 20.0
+    
+        # Pre-breakout buildup
+        if -5 < dist < 0:
+            return 70 * (1 + (dist / 5))  # rises from 0→70 as we near the high
+    
+        # Fresh breakout (0–1%)
+        if 0 <= dist <= 1:
+            return 70 + (30 * (dist / 1))  # scales to 100 at +1%
+    
+        # Overextended (1–3%)
+        if 1 < dist <= 3:
+            return max(90 - (dist - 1) * 10, 70)  # decays slightly
+    
+        # Beyond reasonable range
+        return 60.0
+
     
     def _score_volume(self, f1d: Dict[str, Any], f4h: Dict[str, Any]) -> float:
         """Score volume confirmation (0-100)."""
@@ -6620,4 +6679,4 @@ v1 provides the structural foundation.
 
 ---
 
-_Generated by GitHub Actions • 2026-01-22 19:38 UTC_
+_Generated by GitHub Actions • 2026-01-22 23:34 UTC_
