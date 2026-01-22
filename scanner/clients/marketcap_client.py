@@ -15,6 +15,11 @@ import requests
 from ..utils.logging_utils import get_logger
 from ..utils.io_utils import load_cache, save_cache, cache_exists
 
+# 🔹 Neu: zentralisierte Rohdaten-Speicherung
+try:
+    from scanner.utils.raw_collector import collect_raw_marketcap
+except ImportError:
+    collect_raw_marketcap = None
 
 logger = get_logger(__name__)
 
@@ -149,6 +154,13 @@ class MarketCapClient:
             
             # Cache the full response
             save_cache(response, cache_key)
+
+            # 🔹 Rohdaten-Snapshot über zentralen Collector speichern
+            if collect_raw_marketcap and data:
+                try:
+                    collect_raw_marketcap(data)
+                except Exception as e:
+                    logger.warning(f"Could not collect MarketCap snapshot: {e}")
             
             return data
             
