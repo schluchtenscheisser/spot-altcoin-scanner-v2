@@ -1,7 +1,7 @@
 # 📘 Code Map — Automatically Generated
 
 **Repository:** schluchtenscheisser/spot-altcoin-scanner  
-**Last Updated:** 2026-01-22 22:30 UTC  
+**Last Updated:** 2026-01-22 23:34 UTC  
 **Generator:** scripts/update_codemap.py
 
 ---
@@ -18,9 +18,9 @@ This Code Map provides a comprehensive structural overview of the Spot Altcoin S
 
 ## 📊 Repository Statistics
 
-- **Total Modules:** 25
+- **Total Modules:** 27
 - **Total Classes:** 15
-- **Total Functions:** 128
+- **Total Functions:** 132
 
 ---
 
@@ -56,9 +56,9 @@ This Code Map provides a comprehensive structural overview of the Spot Altcoin S
 
 **Functions:** `__init__, _request, build_symbol_map, get_all_listings, get_listings, get_market_cap_for_symbol`
 
-**Module Variables:** `BASE_URL, cache_key, cached, collisions, data, existing_rank, listings, logger, new_rank, params` _(+4 more)_
+**Module Variables:** `BASE_URL, cache_key, cached, collect_raw_marketcap, collisions, data, existing_rank, listings, logger, new_rank` _(+5 more)_
 
-**Imports:** `os, requests, typing, utils.io_utils, utils.logging_utils`
+**Imports:** `os, requests, scanner.utils.raw_collector, typing, utils.io_utils, utils.logging_utils`
 
 ---
 
@@ -154,9 +154,9 @@ This Code Map provides a comprehensive structural overview of the Spot Altcoin S
 
 **Functions:** `__init__, fetch_all, get_fetch_stats`
 
-**Module Variables:** `candles, date_range, failed, first_symbol, klines, limit, logger, min_required, newest, ohlcv_config` _(+6 more)_
+**Module Variables:** `candles, collect_raw_ohlcv, date_range, failed, first_symbol, klines, limit, logger, min_required, newest` _(+7 more)_
 
-**Imports:** `datetime, logging, typing`
+**Imports:** `datetime, logging, pandas, scanner.utils.raw_collector, typing`
 
 ---
 
@@ -274,6 +274,26 @@ This Code Map provides a comprehensive structural overview of the Spot Altcoin S
 
 ---
 
+### 📄 `scanner/utils/raw_collector.py`
+
+**Functions:** `collect_raw_features, collect_raw_marketcap, collect_raw_ohlcv`
+
+**Module Variables:** `df, flat_records`
+
+**Imports:** `pandas, scanner.utils.save_raw, typing`
+
+---
+
+### 📄 `scanner/utils/save_raw.py`
+
+**Functions:** `save_raw_snapshot`
+
+**Module Variables:** `base_dir, csv_path, parquet_path, saved_paths, timestamp`
+
+**Imports:** `datetime, os, pandas`
+
+---
+
 ### 📄 `scanner/utils/time_utils.py`
 
 **Functions:** `ms_to_timestamp, parse_timestamp, timestamp_to_ms, utc_date, utc_now, utc_timestamp`
@@ -310,7 +330,7 @@ _This section shows which functions call which other functions, helping identify
 | `_request` | — | `RequestException`, `ValueError`, `error`, `get`, `json`, `keys`, `raise_for_status` |
 | `build_symbol_map` | `get_all_listings` | `append`, `debug`, `get`, `info`, `upper`, `warning` |
 | `get_all_listings` | `get_listings` | — |
-| `get_listings` | `_request` | `cache_exists`, `error`, `get`, `info`, `load_cache`, `save_cache` |
+| `get_listings` | `_request` | `cache_exists`, `collect_raw_marketcap`, `error`, `get`, `info`, `load_cache`, `save_cache`, `warning` |
 | `get_market_cap_for_symbol` | `build_symbol_map` | `get`, `upper` |
 
 ### 📄 scanner/clients/mexc_client.py
@@ -409,7 +429,7 @@ _This section shows which functions call which other functions, helping identify
 | Calling Function | Internal Calls | External Calls |
 |------------------|----------------|----------------|
 | `__init__` | — | `get`, `info` |
-| `fetch_all` | — | `error`, `get`, `get_klines`, `info`, `warning` |
+| `fetch_all` | — | `collect_raw_ohlcv`, `error`, `get`, `get_klines`, `info`, `warning` |
 | `get_fetch_stats` | — | `fromtimestamp`, `keys`, `strftime`, `values` |
 
 ### 📄 scanner/pipeline/output.py
@@ -503,6 +523,20 @@ _This section shows which functions call which other functions, helping identify
 | `get_logger` | `setup_logger` | `getLogger` |
 | `setup_logger` | — | `Formatter`, `Path`, `RotatingFileHandler`, `StreamHandler`, `addHandler`, `clear`, `getLogger`, `mkdir`, `setFormatter`, `setLevel`, `strftime`, `upper`, `utcnow` |
 
+### 📄 scanner/utils/raw_collector.py
+
+| Calling Function | Internal Calls | External Calls |
+|------------------|----------------|----------------|
+| `collect_raw_features` | — | `save_raw_snapshot` |
+| `collect_raw_marketcap` | — | `DataFrame`, `save_raw_snapshot` |
+| `collect_raw_ohlcv` | — | `DataFrame`, `append`, `items`, `save_raw_snapshot` |
+
+### 📄 scanner/utils/save_raw.py
+
+| Calling Function | Internal Calls | External Calls |
+|------------------|----------------|----------------|
+| `save_raw_snapshot` | — | `join`, `makedirs`, `strftime`, `to_csv`, `to_parquet`, `utcnow` |
+
 ### 📄 scanner/utils/time_utils.py
 
 | Calling Function | Internal Calls | External Calls |
@@ -526,7 +560,7 @@ _Modules with high external call counts may benefit from refactoring._
 | `scanner/pipeline/features.py` | 12 | 29 | 41 | 🔴 High |
 | `scanner/clients/mexc_client.py` | 6 | 28 | 34 | 🔴 High |
 | `scanner/pipeline/__init__.py` | 0 | 32 | 32 | 🔴 High |
-| `scanner/clients/marketcap_client.py` | 4 | 25 | 29 | 🔴 High |
+| `scanner/clients/marketcap_client.py` | 4 | 27 | 31 | 🔴 High |
 | `scanner/pipeline/excel_output.py` | 3 | 25 | 28 | 🔴 High |
 | `scanner/pipeline/output.py` | 3 | 25 | 28 | 🔴 High |
 | `scanner/config.py` | 0 | 26 | 26 | 🔴 High |
@@ -538,10 +572,12 @@ _Modules with high external call counts may benefit from refactoring._
 | `scanner/pipeline/filters.py` | 7 | 10 | 17 | ⚠️ Medium |
 | `scanner/utils/io_utils.py` | 5 | 10 | 15 | 🔴 High |
 | `scanner/utils/logging_utils.py` | 1 | 14 | 15 | 🔴 High |
-| `scanner/pipeline/ohlcv.py` | 0 | 11 | 11 | 🔴 High |
+| `scanner/pipeline/ohlcv.py` | 0 | 12 | 12 | 🔴 High |
 | `scanner/utils/time_utils.py` | 2 | 7 | 9 | 🔴 High |
 | `scanner/main.py` | 2 | 5 | 7 | 🔴 High |
+| `scanner/utils/raw_collector.py` | 0 | 7 | 7 | 🔴 High |
 | `scanner/pipeline/shortlist.py` | 0 | 6 | 6 | 🔴 High |
+| `scanner/utils/save_raw.py` | 0 | 6 | 6 | 🔴 High |
 | `scanner/tools/validate_features.py` | 0 | 5 | 5 | 🔴 High |
 
 **Interpretation:**
@@ -561,4 +597,4 @@ _Modules with high external call counts may benefit from refactoring._
 
 ---
 
-_Generated by GitHub Actions • 2026-01-22 22:30 UTC_
+_Generated by GitHub Actions • 2026-01-22 23:34 UTC_
