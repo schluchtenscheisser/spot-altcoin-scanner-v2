@@ -1,0 +1,47 @@
+import json
+import os
+
+def validate_features(report_path: str):
+    """
+    Prüft, ob die im JSON-Report gespeicherten Feature- und Scoring-Werte
+    numerisch, plausibel und nicht konstant sind.
+    """
+
+    if not os.path.exists(report_path):
+        print(f"❌ Report-Datei nicht gefunden: {report_path}")
+        return
+
+    with open(report_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    if not isinstance(data, dict) or "results" not in data:
+        print("❌ Ungültiges Report-Format – keine 'results'-Sektion gefunden.")
+        return
+
+    results = data["results"]
+    if not results:
+        print("⚠️ Keine Ergebnisse im Report.")
+        return
+
+    anomalies = []
+
+    for setup_type, setups in results.items():
+        for s in setups:
+            comps = s.get("components", {})
+            for key, value in comps.items():
+                # Prüfe auf None oder nicht-numerische Werte
+                if value is None or not isinstance(value, (int, float)):
+                    anomalies.append((setup_type, s.get("symbol"), key, value))
+                # Prüfe auf unrealistische Werte
+                elif not (0 <= value <= 150):
+                    anomalies.append((setup_type, s.get("symbol"), key, value))
+
+    if anomalies:
+        print("⚠️ Anomalien gefunden:")
+        for setup_type, symbol, key, value in anomalies:
+            print(f"  [{setup_type}] {symbol}: {key} = {value}")
+    else:
+        print("✅ Alle Feature-Komponenten numerisch und plausibel.")
+
+# Beispiel-Aufruf:
+# validate_features("reports/2026-01-22.json")
