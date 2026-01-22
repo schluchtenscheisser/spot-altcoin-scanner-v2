@@ -18,310 +18,181 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-
 class FeatureEngine:
-    """Computes technical features from OHLCV data."""
-    
+    """Computes technical features from OHLCV data (v1.1 – integrity upgrade)."""
+
     def __init__(self, config: Dict[str, Any]):
-        """
-        Initialize feature engine.
-        
-        Args:
-            config: Config dict (not used currently, for future extensions)
-        """
         self.config = config
-        logger.info("Feature Engine initialized")
-    
-    def compute_all(
-        self,
-        ohlcv_data: Dict[str, Dict[str, List[List]]]
-    ) -> Dict[str, Dict[str, Any]]:
-        """
-        Compute features for all symbols.
-        
-        Args:
-            ohlcv_data: Dict mapping symbol -> timeframe -> klines
-                {
-                    'BTCUSDT': {
-                        '1d': [[ts, o, h, l, c, v, ...], ...],
-                        '4h': [[ts, o, h, l, c, v, ...], ...]
-                    },
-                    ...
-                }
-        
-        Returns:
-            Dict mapping symbol -> features
-            {
-                'BTCUSDT': {
-                    '1d': {...},
-                    '4h': {...},
-                    'meta': {...}
-                },
-                ...
-            }
-        """
+        logger.info("Feature Engine v1.1 initialized")
+
+    # -------------------------------------------------------------------------
+    # Main entry point
+    # -------------------------------------------------------------------------
+    def compute_all(self, ohlcv_data: Dict[str, Dict[str, List[List]]]) -> Dict[str, Dict[str, Any]]:
         results = {}
         total = len(ohlcv_data)
-        
         logger.info(f"Computing features for {total} symbols")
-        
+
         for i, (symbol, tf_data) in enumerate(ohlcv_data.items(), 1):
-            logger.debug(f"[{i}/{total}] Computing features for {symbol}")
-            
             try:
+                logger.debug(f"[{i}/{total}] Computing features for {symbol}")
                 symbol_features = {}
-                
-                # Compute features for each timeframe
-                if '1d' in tf_data:
-                    symbol_features['1d'] = self._compute_timeframe_features(
-                        tf_data['1d'], 
-                        timeframe='1d'
-                    )
-                
-                if '4h' in tf_data:
-                    symbol_features['4h'] = self._compute_timeframe_features(
-                        tf_data['4h'],
-                        timeframe='4h'
-                    )
-                
-                # Meta info
-                symbol_features['meta'] = {
-                    'symbol': symbol,
-                    'last_update': int(tf_data['1d'][-1][0]) if '1d' in tf_data else None
+
+                if "1d" in tf_data:
+                    symbol_features["1d"] = self._compute_timeframe_features(tf_data["1d"], "1d", symbol)
+                if "4h" in tf_data:
+                    symbol_features["4h"] = self._compute_timeframe_features(tf_data["4h"], "4h", symbol)
+
+                symbol_features["meta"] = {
+                    "symbol": symbol,
+                    "last_update": int(tf_data.get("1d", [[None]])[-1][0]) if "1d" in tf_data else None,
                 }
-                
                 results[symbol] = symbol_features
-                
             except Exception as e:
                 logger.error(f"Failed to compute features for {symbol}: {e}")
-                continue
-        
         logger.info(f"Features computed for {len(results)}/{total} symbols")
         return results
-    
-    def _compute_timeframe_features(
-        self,
-        klines: List[List],
-        timeframe: str
-    ) -> Dict[str, Any]:
-        """
-        Compute features for a single timeframe.
-        
-        Args:
-            klines: List of klines [[ts, o, h, l, c, v, ...], ...]
-            timeframe: '1d' or '4h'
-        
-        Returns:
-            Feature dict (all numpy types converted to Python native types)
-        """
-        # Extract OHLCV arrays
+
+    # -------------------------------------------------------------------------
+    # Timeframe feature computation
+    # -------------------------------------------------------------------------
+    def _compute_timeframe_features(self, klines: List[List], timeframe: str, symbol: str) -> Dict[str, Any]:
         closes = np.array([k[4] for k in klines], dtype=float)
         highs = np.array([k[2] for k in klines], dtype=float)
         lows = np.array([k[3] for k in klines], dtype=float)
         volumes = np.array([k[5] for k in klines], dtype=float)
-        
-        features = {}
-        
-        # Current price
-        features['close'] = float(closes[-1])
-        features['high'] = float(highs[-1])
-        features['low'] = float(lows[-1])
-        features['volume'] = float(volumes[-1])
-        
-        # Returns
-        features['r_1'] = self._calc_return(closes, 1)
-        features['r_3'] = self._calc_return(closes, 3)
-        features['r_7'] = self._calc_return(closes, 7)
-        
-        # EMAs
-        features['ema_20'] = self._calc_ema(closes, 20)
-        features['ema_50'] = self._calc_ema(closes, 50)
-        
-        # Price relative to EMAs (%)
-        features['dist_ema20_pct'] = ((closes[-1] / features['ema_20']) - 1) * 100 if features['ema_20'] else None
-        features['dist_ema50_pct'] = ((closes[-1] / features['ema_50']) - 1) * 100 if features['ema_50'] else None
-        
-        # ATR (as % of price)
-        features['atr_pct'] = self._calc_atr_pct(highs, lows, closes, period=14)
-        
-        # Volume
-        # Wenn kein SMA-Wert vorhanden oder dieser 0 ist, setze Volume-Spike = 0.0 (neutral)
-        features['volume_sma_14'] = self._calc_sma(volumes, 14)
-        features['volume_spike'] = (
-            float(volumes[-1] / features['volume_sma_14'])
-            if features.get('volume_sma_14', 0) > 0
-            else 0.0
-        )
-        
-        # Higher High / Higher Low (trend structure) - convert to native bool
-        features['hh_20'] = bool(self._detect_higher_high(highs, lookback=20))
-        features['hl_20'] = bool(self._detect_higher_low(lows, lookback=20))
-        
-        # Breakout distance (distance to recent high)
-        # Fallback auf 0.0, falls zu wenig Daten oder NaN-Werte vorhanden sind
-        features['breakout_dist_20'] = (
-            self._calc_breakout_distance(closes, highs, lookback=20) or 0.0
-        )
-        features['breakout_dist_30'] = (
-            self._calc_breakout_distance(closes, highs, lookback=30) or 0.0
-        )
-        
-        # Drawdown from ATH
-        features['drawdown_from_ath'] = self._calc_drawdown(closes)
-        
-        # Base detection (sideways consolidation)
-        if timeframe == '1d':
-            base_result = self._detect_base(closes, lows, lookback=30)
-            features['base_detected'] = bool(base_result) if base_result is not None else None
-        else:
-            features['base_detected'] = None
-        
-        # Ensure all numeric values are native Python types for JSON serialization
-        return self._convert_to_native_types(features)
-    
-    def _convert_to_native_types(self, features: Dict[str, Any]) -> Dict[str, Any]:
-        """Convert numpy types to Python native types for JSON serialization."""
-        converted = {}
-        for key, value in features.items():
-            if value is None:
-                converted[key] = None
-            elif isinstance(value, (np.floating, np.float64, np.float32)):
-                converted[key] = float(value)
-            elif isinstance(value, (np.integer, np.int64, np.int32)):
-                converted[key] = int(value)
-            elif isinstance(value, (np.bool_, bool)):
-                converted[key] = bool(value)
-            else:
-                converted[key] = value
-        return converted
-    
-    def _calc_return(self, closes: np.ndarray, periods: int) -> Optional[float]:
-        """Calculate return over N periods (%)."""
+
+        if len(closes) < 50:
+            logger.warning(f"[{symbol}] insufficient candles ({len(closes)}) for timeframe {timeframe}")
+            return {}
+
+        f = {}
+        f["close"], f["high"], f["low"], f["volume"] = map(float, (closes[-1], highs[-1], lows[-1], volumes[-1]))
+
+        # Returns & EMAs
+        f["r_1"] = self._calc_return(symbol, closes, 1)
+        f["r_3"] = self._calc_return(symbol, closes, 3)
+        f["r_7"] = self._calc_return(symbol, closes, 7)
+        f["ema_20"] = self._calc_ema(symbol, closes, 20)
+        f["ema_50"] = self._calc_ema(symbol, closes, 50)
+
+        f["dist_ema20_pct"] = ((closes[-1] / f["ema_20"]) - 1) * 100 if f.get("ema_20") else np.nan
+        f["dist_ema50_pct"] = ((closes[-1] / f["ema_50"]) - 1) * 100 if f.get("ema_50") else np.nan
+
+        f["atr_pct"] = self._calc_atr_pct(symbol, highs, lows, closes, 14)
+        f["volume_sma_14"] = self._calc_sma(volumes, 14)
+        f["volume_spike"] = self._calc_volume_spike(symbol, volumes, f["volume_sma_14"])
+
+        # Trend structure
+        f["hh_20"] = bool(self._detect_higher_high(highs, 20))
+        f["hl_20"] = bool(self._detect_higher_low(lows, 20))
+
+        # Structural metrics
+        f["breakout_dist_20"] = self._calc_breakout_distance(symbol, closes, highs, 20)
+        f["breakout_dist_30"] = self._calc_breakout_distance(symbol, closes, highs, 30)
+        f["drawdown_from_ath"] = self._calc_drawdown(closes)
+
+        # Base detection
+        f["base_score"] = self._detect_base(symbol, closes, lows, 30) if timeframe == "1d" else np.nan
+
+        return self._convert_to_native_types(f)
+
+    # -------------------------------------------------------------------------
+    # Calculation methods
+    # -------------------------------------------------------------------------
+    def _calc_return(self, symbol: str, closes: np.ndarray, periods: int) -> Optional[float]:
         if len(closes) <= periods:
-            return None
-        return float(((closes[-1] / closes[-periods-1]) - 1) * 100)
-    
-    def _calc_ema(self, data: np.ndarray, period: int) -> Optional[float]:
-        """Calculate Exponential Moving Average."""
+            logger.warning(f"[{symbol}] insufficient candles for return({periods})")
+            return np.nan
+        try:
+            return float(((closes[-1] / closes[-periods-1]) - 1) * 100)
+        except Exception as e:
+            logger.error(f"[{symbol}] return({periods}) error: {e}")
+            return np.nan
+
+    def _calc_ema(self, symbol: str, data: np.ndarray, period: int) -> Optional[float]:
         if len(data) < period:
-            return None
-        
+            logger.warning(f"[{symbol}] insufficient data for EMA{period}")
+            return np.nan
         alpha = 2 / (period + 1)
         ema = data[0]
-        
         for val in data[1:]:
             ema = alpha * val + (1 - alpha) * ema
-        
         return float(ema)
-    
+
     def _calc_sma(self, data: np.ndarray, period: int) -> Optional[float]:
-        """Calculate Simple Moving Average."""
-        if len(data) < period:
-            return None
-        return float(np.mean(data[-period:]))
-    
-    def _calc_atr_pct(
-        self,
-        highs: np.ndarray,
-        lows: np.ndarray,
-        closes: np.ndarray,
-        period: int = 14
-    ) -> Optional[float]:
-        """Calculate Average True Range as % of price."""
+        return float(np.nanmean(data[-period:])) if len(data) >= period else np.nan
+
+    def _calc_volume_spike(self, symbol: str, volumes: np.ndarray, sma: Optional[float]) -> float:
+        if sma is None or np.isnan(sma) or sma == 0:
+            logger.warning(f"[{symbol}] volume_spike skipped (SMA invalid)")
+            return np.nan
+        return float(volumes[-1] / sma)
+
+    def _calc_atr_pct(self, symbol: str, highs: np.ndarray, lows: np.ndarray, closes: np.ndarray, period: int) -> Optional[float]:
         if len(highs) < period + 1:
-            return None
-        
-        # True Range
-        tr = []
-        for i in range(1, len(highs)):
-            hl = highs[i] - lows[i]
-            hc = abs(highs[i] - closes[i-1])
-            lc = abs(lows[i] - closes[i-1])
-            tr.append(max(hl, hc, lc))
-        
-        tr = np.array(tr)
-        
-        # ATR
+            logger.warning(f"[{symbol}] insufficient candles for ATR{period}")
+            return np.nan
+        tr = [max(highs[i]-lows[i], abs(highs[i]-closes[i-1]), abs(lows[i]-closes[i-1])) for i in range(1, len(highs))]
         atr = np.mean(tr[-period:])
-        
-        # As % of current price
-        return float((atr / closes[-1]) * 100) if closes[-1] > 0 else None
-    
+        return float((atr / closes[-1]) * 100) if closes[-1] > 0 else np.nan
+
+    def _calc_breakout_distance(self, symbol: str, closes: np.ndarray, highs: np.ndarray, lookback: int) -> Optional[float]:
+        if len(highs) < lookback:
+            logger.warning(f"[{symbol}] insufficient candles for breakout_dist_{lookback}")
+            return np.nan
+        try:
+            recent_high = np.nanmax(highs[-lookback:])
+            return float(((closes[-1] / recent_high) - 1) * 100)
+        except Exception as e:
+            logger.error(f"[{symbol}] breakout_dist_{lookback} error: {e}")
+            return np.nan
+
+    def _calc_drawdown(self, closes: np.ndarray) -> Optional[float]:
+        if len(closes) == 0:
+            return np.nan
+        ath = np.nanmax(closes)
+        return float(((closes[-1] / ath) - 1) * 100)
+
+    # -------------------------------------------------------------------------
+    # Structure detection
+    # -------------------------------------------------------------------------
     def _detect_higher_high(self, highs: np.ndarray, lookback: int = 20) -> bool:
-        """Detect if recent high is highest in lookback period."""
         if len(highs) < lookback:
             return False
-        
-        recent_high = np.max(highs[-5:])  # Last 5 bars
-        lookback_high = np.max(highs[-lookback:-5])  # Previous bars
-        
-        return bool(recent_high > lookback_high)
-    
+        return bool(np.nanmax(highs[-5:]) > np.nanmax(highs[-lookback:-5]))
+
     def _detect_higher_low(self, lows: np.ndarray, lookback: int = 20) -> bool:
-        """Detect if recent low is higher than lookback period."""
         if len(lows) < lookback:
             return False
-        
-        recent_low = np.min(lows[-5:])  # Last 5 bars
-        lookback_low = np.min(lows[-lookback:-5])  # Previous bars
-        
-        return bool(recent_low > lookback_low)
-    
-    def _calc_breakout_distance(
-        self,
-        closes: np.ndarray,
-        highs: np.ndarray,
-        lookback: int = 20
-    ) -> Optional[float]:
-        """
-        Calculate distance to breakout level (%).
-        Positive = above recent high, Negative = below.
-        """
-        if len(highs) < lookback:
-            return None
-        
-        recent_high = np.max(highs[-lookback:])
-        current = closes[-1]
-        
-        return float(((current / recent_high) - 1) * 100)
-    
-    def _calc_drawdown(self, closes: np.ndarray) -> Optional[float]:
-        """Calculate drawdown from ATH (%)."""
-        if len(closes) == 0:
-            return None
-        
-        ath = np.max(closes)
-        current = closes[-1]
-        
-        return float(((current / ath) - 1) * 100)
-    
-    def _detect_base(
-        self,
-        closes: np.ndarray,
-        lows: np.ndarray,
-        lookback: int = 30
-    ) -> Optional[bool]:
-        """
-        Detect base formation (sideways consolidation).
-        
-        Criteria:
-        - No new lows in last 10 bars
-        - Low volatility (ATR)
-        """
+        return bool(np.nanmin(lows[-5:]) > np.nanmin(lows[-lookback:-5]))
+
+    def _detect_base(self, symbol: str, closes: np.ndarray, lows: np.ndarray, lookback: int = 30) -> Optional[float]:
         if len(closes) < lookback:
-            return None
-        
-        recent_period = lookback // 3  # Last third of lookback
-        
-        # Check for new lows
-        recent_low = np.min(lows[-recent_period:])
-        prior_low = np.min(lows[-lookback:-recent_period])
-        
+            logger.warning(f"[{symbol}] insufficient candles for base detection")
+            return np.nan
+        recent_low = np.nanmin(lows[-lookback//3:])
+        prior_low = np.nanmin(lows[-lookback:-lookback//3])
         no_new_lows = recent_low >= prior_low
-        
-        # Check volatility (simple range check)
-        recent_range = (np.max(closes[-recent_period:]) - np.min(closes[-recent_period:])) / np.mean(closes[-recent_period:])
-        
-        low_volatility = recent_range < 0.15  # Less than 15% range
-        
-        return bool(no_new_lows and low_volatility)
+        price_range = (np.nanmax(closes[-lookback:]) - np.nanmin(closes[-lookback:])) / np.nanmean(closes[-lookback:]) * 100
+        stability_score = max(0.0, 100.0 - price_range)
+        base_score = stability_score if no_new_lows else stability_score / 2
+        return float(base_score)
+
+    # -------------------------------------------------------------------------
+    # Utility
+    # -------------------------------------------------------------------------
+    def _convert_to_native_types(self, features: Dict[str, Any]) -> Dict[str, Any]:
+        converted = {}
+        for k, v in features.items():
+            if v is None or (isinstance(v, float) and np.isnan(v)):
+                converted[k] = None
+            elif isinstance(v, (np.floating, np.float64, np.float32)):
+                converted[k] = float(v)
+            elif isinstance(v, (np.integer, np.int64, np.int32)):
+                converted[k] = int(v)
+            elif isinstance(v, (np.bool_, bool)):
+                converted[k] = bool(v)
+            else:
+                converted[k] = v
+        return converted
